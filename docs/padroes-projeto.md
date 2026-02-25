@@ -57,3 +57,8 @@ Para manter o histórico do GitHub organizado, todas as mensagens de commit deve
 * `[FIX]` -> Quando corrigir um erro ou bug. (Ex: *[FIX] Corrigindo cálculo da multa*)
 * `[DOCS]` -> Quando alterar apenas arquivos de documentação. (Ex: *[DOCS] Atualizando o README*)
 * `[UI]` -> Quando alterar apenas o visual/layout. (Ex: *[UI] Mudando cor do botão de salvar*)
+
+**Quando for mexer no codigo salve as alterações com:**
+'git add .'
+'git commit -m 'sua alteração'' 
+'git push' <-- isso salva as alterações de vez.
