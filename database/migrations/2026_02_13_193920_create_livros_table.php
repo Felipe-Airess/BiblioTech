@@ -17,6 +17,7 @@ return new class extends Migration
             $table->string('autor');
             $table->string('isbn')->unique();
             $table->boolean('e_bestseller')->default(false); // RN002 [1]
+            $table->string('capa')->nullable();
             $table->timestamps();
             $table->softDeletes(); 
 
