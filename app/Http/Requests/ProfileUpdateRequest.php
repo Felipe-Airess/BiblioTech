@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Membros;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,6 +16,11 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
+        $user = $this->user();
+
+        // Use the correct model for uniqueness checks depending on the guard/user type.
+        $userClass = $user instanceof Membros ? Membros::class : User::class;
+
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => [
@@ -23,7 +29,7 @@ class ProfileUpdateRequest extends FormRequest
                 'lowercase',
                 'email',
                 'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
+                Rule::unique($userClass)->ignore($user->id),
             ],
         ];
     }

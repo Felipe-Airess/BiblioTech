@@ -52,6 +52,9 @@
             <x-primary-button class="ms-4">
                 Cadastrar Bibliotecário
             </x-primary-button>
+            <a href="{{ route('dashboard') }}" class="ml-4 bg-gray-600 rounded-md py-2 px-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-900 dark:hover:text-white">
+                Voltar ao Dashboard
+            </a>
         </div>
     </form>
 </x-guest-layout>

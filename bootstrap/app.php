@@ -10,9 +10,14 @@ return Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        //
+    ->withMiddleware(function (Middleware $middleware) {
+        
+        // AQUI ESTÁ A MÁGICA: Registrando o apelido do nosso middleware
+        $middleware->alias([
+            'tipo' => \App\Http\Middleware\VerificaTipo::class,
+        ]);
+
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();

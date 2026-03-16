@@ -14,6 +14,8 @@ return [
     */
 
     'defaults' => [
+        // mantemos o guard padrão como "web" para usuários/admins;
+        // a tela de registro continua criando membros explicitamente
         'guard' => env('AUTH_GUARD', 'web'),
         'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
     ],
@@ -40,6 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        // guard específico para membros
+        'membro' => [
+            'driver' => 'session',
+            'provider' => 'membros',
+        ],
     ],
 
     /*
@@ -63,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => env('AUTH_MODEL', App\Models\User::class),
+        ],
+
+        'membros' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Membros::class,
         ],
 
         // 'users' => [
@@ -97,13 +110,17 @@ return [
             'expire' => 60,
             'throttle' => 60,
         ],
+
+        // opcional: broker separado para membros de ser usado explicitamente
+        'membros' => [
+            'provider' => 'membros',
+            'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
+            'expire' => 60,
+            'throttle' => 60,
+        ],
     ],
 
     /*
-    |--------------------------------------------------------------------------
-    | Password Confirmation Timeout
-    |--------------------------------------------------------------------------
-    |
     | Here you may define the number of seconds before a password confirmation
     | window expires and users are asked to re-enter their password via the
     | confirmation screen. By default, the timeout lasts for three hours.

@@ -26,7 +26,7 @@ class FuncionarioController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password), // Criptografa a senha
-            'tipo_usuario' => 'bibliotecario', // Aqui é o pulo do gato! Forçamos o cargo.
+            'tipo_usuario' => 'bibliotecario', 
         ]);
 
         // 3. Devolve para a tela com uma mensagem de sucesso

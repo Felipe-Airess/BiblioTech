@@ -8,6 +8,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rules;
+// Note: not actually used here, kept for reference
+
 
 class LoginRequest extends FormRequest
 {
@@ -41,13 +44,26 @@ class LoginRequest extends FormRequest
     {
         $this->ensureIsNotRateLimited();
 
-        if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
-            RateLimiter::hit($this->throttleKey());
+        // tenta primeiro com o guard padrão (web, que cobre o admin/usuários).
+        $credentials = $this->only('email','password');
+        $remember = $this->boolean('remember');
 
-            throw ValidationException::withMessages([
-                'email' => trans('auth.failed'),
-            ]);
+        if (Auth::attempt($credentials, $remember)) {
+            RateLimiter::clear($this->throttleKey());
+            return;
         }
+
+        // se falhar, tentamos também o guard de membros, para que
+        // ambos tipos de conta sejam admitidos usando o mesmo formulário.
+        if (Auth::guard('membro')->attempt($credentials, $remember)) {
+            RateLimiter::clear($this->throttleKey());
+            return;
+        }
+
+        RateLimiter::hit($this->throttleKey());
+        throw ValidationException::withMessages([
+            'email' => trans('auth.failed'),
+        ]);
 
         RateLimiter::clear($this->throttleKey());
     }
