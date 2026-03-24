@@ -7,6 +7,8 @@ use App\Http\Controllers\LivroController;
 use App\Models\Livros;  
 use App\Models\Membros;
 use App\Http\Controllers\MembrosController;
+use App\Http\Controllers\EmprestimoController;
+use App\Http\Controllers\EmprestimoAdminController;
 
 Route::get('/', function () {
     return view('welcome');
@@ -22,7 +24,8 @@ Route::get('/', function () {
     Route::delete('/admin/livros/{id}', [LivroController::class, 'destroy'])->name('livros.destroy')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/livros/{id}/editar', [LivroController::class, 'edit'])->name('livros.edit')->middleware('tipo:gerente,bibliotecario');
     Route::put('/admin/livros/{id}', [LivroController::class, 'update'])->name('livros.update')->middleware('tipo:gerente,bibliotecario');
-
+    Route::get('/admin/emprestimos', [EmprestimoAdminController::class, 'index'])->name('admin.emprestimos.index')->middleware('tipo:gerente,bibliotecario');
+    Route::post('/admin/emprestimos/{id}/devolver', [EmprestimoAdminController::class, 'devolver'])->name('admin.emprestimos.devolver')->middleware('tipo:gerente,bibliotecario');
     // Rotas para o CRUD de Bibliotecários
     Route::post('/admin/bibliotecarios/salvar', [FuncionarioController::class, 'store'])->name('bibliotecarios.store')->middleware('tipo:gerente');
     Route::get('/admin/bibliotecarios/novo', [FuncionarioController::class, 'create'])->name('bibliotecarios.create')->middleware('tipo:gerente');
@@ -32,6 +35,8 @@ Route::get('/', function () {
 //Rotas para o CRUD de Membros
 Route::get('/membros/novo', [MembrosController::class, 'create'])->name('membros.create');
 Route::post('/membros/salvar', [MembrosController::class, 'store'])->name('membros.store');
+
+Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->name('livros.alugar'); // Só membros podem alugar livros
 
 Route::get('/dashboard', function () {
     // Busca todos os livros cadastrados, do mais novo pro mais velho

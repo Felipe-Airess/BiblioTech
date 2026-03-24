@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-
+use App\Models\User;
 class Membros extends Authenticatable
 {
     use HasFactory, Notifiable;
@@ -64,4 +64,11 @@ class Membros extends Authenticatable
             'password' => 'hashed',
         ];
     }
+    public function user()
+    {
+        // Aqui dizemos que este registro pertence ao Model User
+        // O Laravel vai usar a coluna 'user_id' da sua tabela 'membros'
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
 }

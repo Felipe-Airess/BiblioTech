@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 use App\Models\Membros;
 use Illuminate\Http\Request;
-
+use App\Models\User; // Para criar o usuário associado ao membro
 class MembrosController extends Controller
 {
     public function create()
@@ -16,6 +16,7 @@ class MembrosController extends Controller
     {
         // Validação dos dados
         $request->validate([
+            
             'nome' => 'required|string|max:255',
             'email' => 'required|email|unique:membros,email',
             'cpf' => 'required|string|unique:membros,cpf',
@@ -29,6 +30,7 @@ class MembrosController extends Controller
 
         // Salvar no banco de dados (senha já será criptografada pelo cast do modelo)
         Membros::create([
+            'user_id' => $request->id, // Associa o membro ao usuário criado
             'nome' => $request->nome,
             'email' => $request->email,
             'cpf' => $request->cpf,

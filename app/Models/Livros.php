@@ -4,18 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes; // Como você usou softDeletes na migration, tem que chamar aqui
+use Illuminate\Database\Eloquent\SoftDeletes; // Para ativar o soft delete
 
 class Livros extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, SoftDeletes; // Para ativar o soft delete
 
-    // Liberando as colunas para serem salvas pelo formulário
+    // Liberamos todos os campos para inserção no banco
     protected $fillable = [
         'titulo',
         'autor',
         'isbn',
         'e_bestseller',
         'capa',
+        'categoria',       
+        'quantidade',      
+        'data_publicacao', 
+        'sinopse'          
+    ];
+
+    // Converte os dados automaticamente para facilitar a nossa vida
+    protected $casts = [
+        'e_bestseller'    => 'boolean',
+        'quantidade'      => 'integer',
+        'data_publicacao' => 'date',
     ];
 }

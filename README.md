@@ -26,18 +26,21 @@ O BiblioTech é um sistema web desenvolvido para automatizar a gestão de biblio
 'composer install'
 
 **Configurar a base de dados**
-'DB_CONNECTION=mysql
+DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE= bibliotech_db
-DB_USERNAME=bibliotech
-DB_PASSWORD=12345678'
+DB_USERNAME=root
+DB_PASSWORD=
 
 **Gere a chave de segurança do laravel**
 'php artisan key:generate'
 
 **Rode o migrate para criar as tabelas**
 'php artisan migrate'
+
+**Crie a pasta storage**
+'php artisan storage:link'
 
 **Inicie o servidor local**
 'php artisan serve'

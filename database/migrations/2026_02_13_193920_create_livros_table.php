@@ -18,6 +18,10 @@ return new class extends Migration
             $table->string('isbn')->unique();
             $table->boolean('e_bestseller')->default(false); // RN002 [1]
             $table->string('capa')->nullable();
+            $table->string('categoria');
+            $table->integer('quantidade');
+            $table->date('data_publicacao');
+            $table->string('sinopse')->nullable();
             $table->timestamps();
             $table->softDeletes(); 
 
