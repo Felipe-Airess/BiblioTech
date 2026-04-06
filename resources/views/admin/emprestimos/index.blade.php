@@ -82,7 +82,11 @@
     @endif
 </td>
                                     <td class="px-4 py-4 dark:text-gray-300 italic">
-                                        {{ $emprestimo->livro->titulo }}
+                                        @if($emprestimo->livro)
+                                            {{ $emprestimo->livro->titulo }}
+                                        @else
+                                            <span class="text-orange-500">Livro não encontrado no ID {{ $emprestimo->livro_id }}</span>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-4 text-center text-sm {{ $atrasado ? 'text-red-600 font-bold animate-pulse' : 'dark:text-gray-400' }}">
                                         {{ $emprestimo->data_devolucao_prevista->format('d/m/Y') }}

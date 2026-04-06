@@ -6,27 +6,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'BiblioTech') }}</title>
+    <title>{{ config('app.name', 'Sistema') }}</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+    <style>
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
 </head>
 
-<body class="font-sans text-gray-800 dark:text-gray-100 antialiased transition-colors duration-200">
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-gray-100 dark:bg-gray-900 transition-colors duration-200">
-        <div>
-            <a href="/" class="flex items-center gap-2 hover:opacity-80 transition mb-6">
-                <span class="font-extrabold text-3xl text-blue-900 dark:text-blue-400 tracking-wider">BiblioTech</span>
-            </a>
-        </div>
-
-        <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-white dark:bg-gray-800 shadow-md overflow-hidden sm:rounded-lg border border-gray-200 dark:border-gray-700 transition-colors duration-200">
+<body class="text-gray-200 antialiased bg-gray-900 selection:bg-[#F59E0B] selection:text-white transition-colors duration-300">
+    <div class="min-h-screen flex flex-col sm:justify-center items-center py-12 px-4 sm:px-6 lg:px-8">
+        
+        <div class="w-full max-w-6xl p-8 bg-gray-800 shadow-2xl shadow-black/50 sm:rounded-md border border-gray-700 animate-fade-in">
             {{ $slot }}
         </div>
+        
     </div>
-
 </body>
 
 </html>

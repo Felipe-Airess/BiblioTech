@@ -37,7 +37,7 @@ Route::get('/membros/novo', [MembrosController::class, 'create'])->name('membros
 Route::post('/membros/salvar', [MembrosController::class, 'store'])->name('membros.store');
 
 Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->name('livros.alugar'); // Só membros podem alugar livros
-
+Route::get('/livros/{id}', [LivroController::class, 'show'])->name('livros.show'); // Rotas públicas para listar e ver detalhes dos livros
 Route::get('/dashboard', function () {
     // Busca todos os livros cadastrados, do mais novo pro mais velho
     $livros = Livros::latest()->get(); 

@@ -9,9 +9,11 @@
 
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
         
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css" />
+
+        <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -22,11 +24,13 @@
             /* Scrollbar Dark */
             ::-webkit-scrollbar { width: 8px; }
             ::-webkit-scrollbar-track { background: #0f172a; }
-            ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
+            ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 0; }
+            ::-webkit-scrollbar-thumb:hover { background: #334155; }
             
+            /* Menu Ativo */
             .nav-item-active {
-                background: rgba(30, 58, 138, 0.4);
-                border-right: 4px solid #F59E0B;
+                background: rgba(30, 58, 138, 0.4); /* #1E3A8A com opacidade */
+                border-left: 3px solid #F59E0B; /* Borda laranja */
                 color: white;
             }
         </style>
@@ -47,49 +51,48 @@
 
                 <aside 
                     :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
-                    class="fixed inset-y-0 left-0 w-64 bg-[#111827] border-r border-gray-800 z-50 transform transition-transform duration-300 ease-in-out lg:static lg:block shadow-2xl">
+                    class="fixed inset-y-0 left-0 w-64 bg-[#111827] border-r border-gray-800 z-50 transform transition-transform duration-300 ease-in-out lg:static lg:block shadow-sm">
                     
                     <div class="h-full flex flex-col">
                         <div class="p-6 flex items-center justify-between border-b border-gray-800/50">
-                            <h2 class="font-black text-lg tracking-tighter text-white uppercase">
+                            <h2 class="font-bold text-lg tracking-tight text-white uppercase">
                                 PAINEL <span class="text-[#F59E0B]">GESTÃO</span>
                             </h2>
-                            <button @click="sidebarOpen = false" class="lg:hidden text-gray-400">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                            <button @click="sidebarOpen = false" class="lg:hidden text-gray-400 hover:text-[#F59E0B] transition-colors">
+                                <i class="ph ph-x text-2xl"></i>
                             </button>
                         </div>
                         
-                        <nav class="flex-1 px-3 py-4 space-y-2 overflow-y-auto">
-                            <div class="px-3 mb-2">
-                                <span class="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500">Biblioteca</span>
+                        <nav class="flex-1 py-6 space-y-1 overflow-y-auto">
+                            <div class="px-6 mb-4">
+                                <span class="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500">Biblioteca</span>
                             </div>
 
                             <a href="{{ route('dashboard') }}" 
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-gray-800 group {{ request()->routeIs('dashboard') ? 'nav-item-active' : 'text-gray-400' }}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                                <span class="text-sm font-bold">Dashboard</span>
+                               class="flex items-center gap-3 px-6 py-3 transition-all hover:bg-gray-800 group {{ request()->routeIs('dashboard') ? 'nav-item-active' : 'text-gray-400 border-l-3 border-transparent' }}">
+                                <i class="ph ph-squares-four text-xl group-hover:text-[#F59E0B] transition-colors {{ request()->routeIs('dashboard') ? 'text-[#F59E0B]' : '' }}"></i>
+                                <span class="text-sm font-semibold">Dashboard</span>
                             </a>
 
-                            <a href="{{ route('admin.emprestimos.index') }}" class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-gray-800 group {{ request()->routeIs('admin.emprestimos.index') ? 'nav-item-active' : 'text-gray-400' }}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                <span class="text-sm font-bold">Controle de Empréstimos</span>
+                            <a href="{{ route('admin.emprestimos.index') }}" class="flex items-center gap-3 px-6 py-3 transition-all hover:bg-gray-800 group {{ request()->routeIs('admin.emprestimos.index') ? 'nav-item-active' : 'text-gray-400 border-l-3 border-transparent' }}">
+                                <i class="ph ph-handshake text-xl group-hover:text-[#F59E0B] transition-colors {{ request()->routeIs('admin.emprestimos.index') ? 'text-[#F59E0B]' : '' }}"></i>
+                                <span class="text-sm font-semibold">Controle de Empréstimos</span>
                             </a>
 
                             @if(auth()->guard('web')->check() && auth()->guard('web')->user()->tipo_usuario === 'gerente')
                             <a href="{{ route('bibliotecarios.create') }}" 
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-gray-800 group {{ request()->routeIs('bibliotecarios.*') ? 'nav-item-active' : 'text-gray-400' }}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
-                                <span class="text-sm font-bold">Novo Bibliotecário</span>
+                               class="flex items-center gap-3 px-6 py-3 transition-all hover:bg-gray-800 group {{ request()->routeIs('bibliotecarios.*') ? 'nav-item-active' : 'text-gray-400 border-l-3 border-transparent' }}">
+                                <i class="ph ph-user-plus text-xl group-hover:text-[#F59E0B] transition-colors {{ request()->routeIs('bibliotecarios.*') ? 'text-[#F59E0B]' : '' }}"></i>
+                                <span class="text-sm font-semibold">Novo Bibliotecário</span>
                             </a>
                             @endif
 
                             <a href="{{ route('livros.create') }}" 
-                               class="flex items-center gap-3 px-4 py-3 rounded-xl transition-all hover:bg-gray-800 group {{ request()->routeIs('livros.create') ? 'nav-item-active' : 'text-gray-400' }}">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253"/></svg>
-                                <span class="text-sm font-bold">Cadastrar Livro</span>
+                               class="flex items-center gap-3 px-6 py-3 transition-all hover:bg-gray-800 group {{ request()->routeIs('livros.create') ? 'nav-item-active' : 'text-gray-400 border-l-3 border-transparent' }}">
+                                <i class="ph ph-book-open-text text-xl group-hover:text-[#F59E0B] transition-colors {{ request()->routeIs('livros.create') ? 'text-[#F59E0B]' : '' }}"></i>
+                                <span class="text-sm font-semibold">Cadastrar Livro</span>
                             </a>
                         </nav>
-                        
                         
                     </div>
                 </aside>
@@ -100,8 +103,8 @@
                 <nav class="bg-[#111827] border-b border-gray-800 h-16 flex items-center px-4 sm:px-6 lg:px-8">
                     @if(auth()->check() && in_array(auth()->user()->tipo_usuario, ['gerente', 'bibliotecario']))
                         <button @click="sidebarOpen = !sidebarOpen" 
-                                class="p-2 mr-4 rounded-lg bg-gray-800 text-[#F59E0B] hover:bg-[#1E3A8A] transition-all lg:hidden">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                                class="p-2 mr-4 rounded-sm bg-gray-800 text-[#F59E0B] hover:bg-[#1E3A8A] hover:text-white transition-all lg:hidden">
+                            <i class="ph ph-list text-2xl"></i>
                         </button>
                     @endif
 
@@ -111,7 +114,7 @@
                 </nav>
 
                 @if (isset($header))
-                    <header class="py-6 px-4 sm:px-6 lg:px-8">
+                    <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-800/50">
                         <div class="max-w-7xl mx-auto">
                             {{ $header }}
                         </div>
@@ -125,14 +128,20 @@
         </div>
 
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        
+        <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
+
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
         <script>
+            /* Modal Configurado com as cores do projeto */
             const darkSwal = Swal.mixin({
                 customClass: {
-                    popup: 'bg-[#111827] text-white border border-gray-800 rounded-3xl',
-                    confirmButton: 'px-6 py-2 mx-2 rounded-xl font-bold uppercase text-xs tracking-widest',
-                    cancelButton: 'px-6 py-2 mx-2 rounded-xl font-bold uppercase text-xs tracking-widest'
+                    popup: 'bg-[#111827] text-white border border-gray-800 rounded-md shadow-xl',
+                    confirmButton: 'px-6 py-2 mx-2 bg-red-500 hover:bg-red-600 text-white rounded-md font-bold uppercase text-xs tracking-widest transition-colors',
+                    cancelButton: 'px-6 py-2 mx-2 bg-[#1e293b] border border-gray-700 hover:bg-gray-800 text-white rounded-md font-bold uppercase text-xs tracking-widest transition-colors'
                 },
-                buttonsStyling: true
+                buttonsStyling: false
             });
 
             function confirmarExclusao(event, form) {
@@ -142,8 +151,6 @@
                     text: "Esta ação não pode ser desfeita.",
                     icon: 'warning',
                     showCancelButton: true,
-                    confirmButtonColor: '#EF4444',
-                    cancelButtonColor: '#1e293b',
                     confirmButtonText: 'EXCLUIR',
                     cancelButtonText: 'CANCELAR'
                 }).then((result) => { if (result.isConfirmed) form.submit(); })

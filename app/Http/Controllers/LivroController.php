@@ -120,4 +120,9 @@ class LivroController extends Controller
 
         return redirect()->back()->with('sucesso', 'Livro atualizado com sucesso!');
     }
+    public function show($id)
+{
+    $livro = Livros::findOrFail($id);
+    return view('livros.show', compact('livro'));
+}
 }
