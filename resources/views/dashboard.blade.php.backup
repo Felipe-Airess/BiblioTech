@@ -7,10 +7,6 @@
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/2.3.1/list.min.js"></script>
     
     {{-- ══ ESTILOS ══ --}}
     <style>
@@ -422,8 +418,6 @@
             </div>
         </section>
 
-        </div>{{-- /hidden acervo --}}
-
         {{-- ── Autores em Destaque ── --}}
         <section class="gs-section">
             <div class="flex items-end justify-between mb-7">
@@ -579,17 +573,5 @@
         });
     </script>
     @endif
-
-
-    {{-- ══════════════════════════════════════════════════════
-         MODAL: "VER TUDO" — com List.js e filtros avançados
-         ══════════════════════════════════════════════════════ --}}
-    <x-modal-todos-livros :categorias="$categorias" :autores="$autores" :livros="$livros" />
-
-
-    {{-- ══════════════════════════════════════════════════════
-         MODAL: "VER TUDO" — com List.js e filtros avançados
-         ══════════════════════════════════════════════════════ --}}
-    <x-modal-todos-livros :categorias="$categorias" :autores="$autores" :livros="$livros" />
 
 </x-app-layout>

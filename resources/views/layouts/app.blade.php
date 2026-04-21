@@ -182,7 +182,7 @@
                     </header>
                 @endif
 
-                <main class="flex-grow">
+                <main class="flex-grow px-4 sm:px-6 lg:px-8 py-6 ">
                     {{ $slot }}
                 </main>
             </div>
