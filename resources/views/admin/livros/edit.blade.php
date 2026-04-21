@@ -29,18 +29,28 @@
                     </div>
 
                     <div class="group">
-                        <label for="autor" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Autor da Obra</label>
-                        <input id="autor" type="text" name="autor" value="{{ old('autor', $livro->autor) }}" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
-                        <x-input-error :messages="$errors->get('autor')" class="mt-2" />
+                        <label for="autor_id" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Autor da Obra</label>
+                        <select id="autor_id" name="autor_id" required
+                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">
+                            <option value="">Selecione um autor</option>
+                            @foreach($autores as $autor)
+                                <option value="{{ $autor->id }}" {{ old('autor_id', $livro->autor_id) == $autor->id ? 'selected' : '' }}>{{ $autor->nome }}</option>
+                            @endforeach
+                        </select>
+                        <x-input-error :messages="$errors->get('autor_id')" class="mt-2" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="group">
                         <label for="categoria" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Categoria</label>
-                        <input id="categoria" type="text" name="categoria" value="{{ old('categoria', $livro->categoria) }}" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                        <select id="categoria" name="categoria" required
+                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">
+                            <option value="">Selecione uma categoria</option>
+                            @foreach(\App\Models\Livros::CATEGORIAS as $cat)
+                                <option value="{{ $cat }}" {{ old('categoria', $livro->categoria) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     
                     <div class="group">
@@ -74,6 +84,26 @@
                     <label for="sinopse" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Sinopse</label>
                     <textarea id="sinopse" name="sinopse" rows="4" 
                         class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">{{ old('sinopse', $livro->sinopse) }}</textarea>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="group">
+                        <label for="editora" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Editora</label>
+                        <input id="editora" type="text" name="editora" value="{{ old('editora', $livro->editora) }}"
+                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                    </div>
+
+                    <div class="group">
+                        <label for="paginas" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Número de Páginas</label>
+                        <input id="paginas" type="number" name="paginas" min="1" value="{{ old('paginas', $livro->paginas) }}"
+                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                    </div>
+                </div>
+
+                <div class="group">
+                    <label for="preview" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Prévia das Páginas</label>
+                    <textarea id="preview" name="preview" rows="6" placeholder="Insira um trecho do livro para prévia..."
+                        class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">{{ old('preview', $livro->preview) }}</textarea>
                 </div>
 
                 <div class="bg-gray-900/50 p-4 border border-dashed border-gray-600 rounded-md hover:border-[#F59E0B] transition-colors duration-300">

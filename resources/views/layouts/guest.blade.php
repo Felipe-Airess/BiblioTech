@@ -23,6 +23,7 @@
             animation: fadeIn 0.6s ease-out forwards;
         }
         body { font-family: 'Inter', sans-serif; }
+        h1, h2, h3, h4, h5, h6, .font-serif, .titulo-mw { font-family: 'Merriweather', serif !important; }
     </style>
 </head>
 

@@ -39,7 +39,20 @@
                     </div>
 
                     <h1 class="text-3xl md:text-4xl font-bold text-white tracking-tight mb-2">{{ $livro->titulo }}</h1>
-                    <p class="text-lg text-gray-400 mb-8">{{ $livro->autor }}</p>
+                    <p class="text-lg text-gray-400 mb-4">
+                        por <a href="{{ route('autores.show', $livro->autor->id) }}" class="hover:text-[#F59E0B] transition-colors">{{ $livro->autor->nome }}</a>
+                    </p>
+
+                    @if($livro->editora || $livro->paginas)
+                        <div class="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
+                            @if($livro->editora)
+                                <span>Editora: <span class="text-gray-300">{{ $livro->editora }}</span></span>
+                            @endif
+                            @if($livro->paginas)
+                                <span>Páginas: <span class="text-gray-300">{{ $livro->paginas }}</span></span>
+                            @endif
+                        </div>
+                    @endif
                     
                     <hr class="border-gray-800 mb-8">
 
@@ -48,6 +61,17 @@
                         <p class="text-gray-400 text-sm leading-relaxed">
                             {{ $livro->sinopse ?? 'Nenhuma sinopse disponível para esta obra.' }}
                         </p>
+
+                        @if($livro->preview)
+                            <div class="mt-6">
+                                <h3 class="text-sm font-semibold text-white mb-3">Prévia das Páginas</h3>
+                                <div class="bg-[#1a1d24] border border-gray-800 rounded-sm p-4">
+                                    <p class="text-gray-300 text-sm leading-relaxed italic">
+                                        "{{ Str::limit($livro->preview, 500) }}"
+                                    </p>
+                                </div>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mt-auto flex flex-col sm:flex-row items-center gap-4">

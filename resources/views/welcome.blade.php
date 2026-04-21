@@ -5,8 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>BiblioTech - Bem-vindo</title>
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=figtree:400,500,600,700,800&display=swap" rel="stylesheet" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     
     <script src="https://unpkg.com/typed.js@2.1.0/dist/typed.umd.js"></script>
@@ -22,7 +23,7 @@
         }
     </style>
 </head>
-<body class="font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen flex flex-col relative overflow-hidden">
+<body class="font-sans antialiased text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-900 transition-colors duration-200 min-h-screen flex flex-col relative overflow-hidden" style="font-family: 'Inter', sans-serif;">
 
     <div class="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-400/20 dark:bg-blue-900/20 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-overlay"></div>
     <div class="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-indigo-400/20 dark:bg-indigo-900/20 rounded-full blur-3xl mix-blend-multiply dark:mix-blend-overlay"></div>
@@ -40,7 +41,7 @@
             📖
         </div>
 
-        <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-900 dark:from-blue-400 dark:to-blue-200 mb-6 drop-shadow-sm py-2">
+        <h1 class="text-6xl md:text-8xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-900 dark:from-blue-400 dark:to-blue-200 mb-6 drop-shadow-sm py-2 font-serif">
             BiblioTech
         </h1>
         

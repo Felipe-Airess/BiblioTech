@@ -15,6 +15,7 @@ class Emprestimos extends Model
         'membro_id',
         'livro_id',
         'data_emprestimo',
+        'status',
         'data_devolucao_prevista',
         'data_devolucao_real',
         'valor_multa',
@@ -24,6 +25,7 @@ class Emprestimos extends Model
         'data_emprestimo'         => 'date',
         'data_devolucao_prevista' => 'date',
         'data_devolucao_real'     => 'date',
+        'status'                  => 'string',
     ];
 
     // Relação 1: O Empréstimo tem um Livro

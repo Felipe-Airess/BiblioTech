@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('membro_id')->constrained('membros'); 
             $table->foreignId('livro_id')->constrained('livros');
+            $table->enum('status', ['ativo', 'devolvido', 'atrasado'])->default('ativo'); // RN001 [1]
             $table->date('data_emprestimo');
             $table->date('data_devolucao_prevista'); // 7 ou 14 dias [1]
             $table->date('data_devolucao_real')->nullable();

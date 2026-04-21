@@ -1,0 +1,90 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use App\Models\Autor;
+
+class AutorController extends Controller
+{
+    public function index()
+    {
+        $autores = Autor::all();
+        return view('admin.autores.index', compact('autores'));
+    }
+
+    public function create()
+    {
+        return view('admin.autores.create');
+    }
+
+    public function store(Request $request)
+    {
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'biografia' => 'nullable|string',
+            'data_nascimento' => 'nullable|date',
+            'nacionalidade' => 'nullable|string|max:255',
+        ]);
+
+        $dados = $request->all();
+
+        if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
+            $dados['foto'] = $request->file('foto')->store('autores', 'public');
+        }
+
+        Autor::create($dados);
+
+        return redirect()->route('autores.index')->with('sucesso', 'Autor cadastrado com sucesso!');
+    }
+
+    public function show($id)
+    {
+        $autor = Autor::findOrFail($id);
+        return view('autores.show', compact('autor'));
+    }
+
+    public function edit($id)
+    {
+        $autor = Autor::findOrFail($id);
+        return view('admin.autores.edit', compact('autor'));
+    }
+
+    public function update(Request $request, $id)
+    {
+        $autor = Autor::findOrFail($id);
+
+        $request->validate([
+            'nome' => 'required|string|max:255',
+            'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'biografia' => 'nullable|string',
+            'data_nascimento' => 'nullable|date',
+            'nacionalidade' => 'nullable|string|max:255',
+        ]);
+
+        $dados = $request->all();
+
+        if ($request->hasFile('foto') && $request->file('foto')->isValid()) {
+            if ($autor->foto) {
+                Storage::disk('public')->delete($autor->foto);
+            }
+            $dados['foto'] = $request->file('foto')->store('autores', 'public');
+        }
+
+        $autor->update($dados);
+
+        return redirect()->route('autores.index')->with('sucesso', 'Autor atualizado com sucesso!');
+    }
+
+    public function destroy($id)
+    {
+        $autor = Autor::findOrFail($id);
+        if ($autor->foto) {
+            Storage::disk('public')->delete($autor->foto);
+        }
+        $autor->delete();
+        return redirect()->route('autores.index')->with('sucesso', 'Autor removido com sucesso!');
+    }
+}
