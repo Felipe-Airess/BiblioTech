@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ sidebarOpen: false }">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" x-data="{ sidebarOpen: false, dark: $persist(true) }" x-effect="document.documentElement.classList.toggle('dark', dark)">
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -40,19 +40,24 @@
                 position: sticky;
                 top: 0;
                 z-index: 30;
-                background: rgba(8, 13, 20, 0.0);
+                background: rgba(248, 250, 252, 0.0);
                 border-bottom: 1px solid transparent;
                 transition: background .3s ease, border-color .3s ease, backdrop-filter .3s ease;
             }
             #app-header.scrolled {
-                background: rgba(8, 13, 20, 0.92);
-                border-bottom-color: rgba(255,255,255,.04);
+                background: rgba(248, 250, 252, 0.92);
+                border-bottom-color: rgba(15, 23, 42, 0.08);
                 backdrop-filter: blur(14px);
                 -webkit-backdrop-filter: blur(14px);
             }
+            .dark #app-header { background: rgba(8, 13, 20, 0.0); }
+            .dark #app-header.scrolled {
+                background: rgba(8, 13, 20, 0.92);
+                border-bottom-color: rgba(255,255,255,.04);
+            }
         </style>
     </head>
-    <body class="antialiased bg-[#0f172a] text-gray-200 overflow-x-hidden">
+    <body class="antialiased bg-slate-50 text-slate-900 dark:bg-[#0f172a] dark:text-gray-200 overflow-x-hidden">
         
         <div class="flex min-h-screen relative">
 
@@ -171,18 +176,18 @@
             </div>
 
             {{-- ── Área principal ── --}}
-            <div class="flex-1 flex flex-col min-w-0 bg-[#080d14]">
+            <div class="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-[#080d14]">
 
                 {{-- Header sticky transparente — fica sobre o hero --}}
                 @if (isset($header))
-                    <header id="app-header" class="px-4 sm:px-6 lg:px-8">
-                        <div class="max-w-7xl mx-auto h-14 flex items-center">
+                    <header id="app-header" class="px-4 sm:px-6 lg:px-8 py-3">
+                        <div class="max-w-7xl mx-auto min-h-[3.25rem]  flex items-start sm:items-center">
                             {{ $header }}
                         </div>
                     </header>
                 @endif
 
-                <main class="flex-grow px-4 sm:px-6 lg:px-8 py-6 ">
+                <main class="flex-grow px-4 sm:px-6 lg:px-8 ">
                     {{ $slot }}
                 </main>
             </div>

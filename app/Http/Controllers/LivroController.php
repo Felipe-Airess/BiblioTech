@@ -6,8 +6,50 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use App\Models\Livros;
 use App\Models\Autor;
+use App\Models\Emprestimos;
+use App\Models\Membros;
 
 class LivroController extends Controller{
+    public function dashboard()
+    {
+        $livros = Livros::with('autor')->latest()->get();
+        $bestsellers = Livros::where('e_bestseller', true)->with('autor')->limit(12)->get();
+        $livrosRecentes = Livros::latest()->with('autor')->limit(12)->get();
+        $categorias = Livros::distinct()->pluck('categoria');
+        $autores = Autor::withCount('livros')->latest()->get();
+
+        $totalLivros = Livros::count();
+        $totalMembros = Membros::count();
+        $emprestimosAtivos = Emprestimos::whereNull('data_devolucao_real')->count();
+        $devolucoesVencidas = Emprestimos::whereNull('data_devolucao_real')
+            ->where('data_devolucao_prevista', '<', today())
+            ->count();
+
+        $emprestimosDoMembro = collect();
+        if (auth()->guard('membro')->check()) {
+            $emprestimosDoMembro = Emprestimos::with('livro.autor')
+                ->where('membro_id', auth()->guard('membro')->id())
+                ->whereNull('data_devolucao_real')
+                ->orderBy('data_devolucao_prevista')
+                ->get();
+        }
+
+        $recomendados = $this->recomendarParaUsuario();
+
+        return view('dashboard', compact(
+            'livros',
+            'bestsellers',
+            'livrosRecentes',
+            'categorias',
+            'autores',
+            'totalLivros',
+            'totalMembros',
+            'emprestimosAtivos',
+            'devolucoesVencidas',
+            'emprestimosDoMembro',
+            'recomendados'
+        ));
+    }
     /**
      * Recomenda livros para o usuário logado com base nas categorias que ele mais pegou emprestado.
      */

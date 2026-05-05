@@ -14,26 +14,19 @@
     
     {{-- ══ ESTILOS ══ --}}
     <style>
-        /* ── Hero: ocupa até a borda e funde com o header ── */
-        .hero-band {
-            position: relative;
-            background-color: #080d14;
-            background-image:
-                radial-gradient(ellipse 80% 60% at 10% 100%, rgba(30,58,138,.28) 0%, transparent 60%),
-                radial-gradient(ellipse 50% 50% at 90% 0%,   rgba(245,158,11,.08) 0%, transparent 55%),
-                url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.012' fill-rule='evenodd'%3E%3Cpath d='M0 40L40 0H20L0 20M40 40V20L20 40'/%3E%3C/g%3E%3C/svg%3E");
-            margin: 0 -1rem;
-            padding: 2.5rem 1rem 5rem;
+        /* ── Brand swap ── */
+        @keyframes brandSwapA {
+            0% { color: #1E3A8A; }
+            50% { color: #F59E0B; }
+            100% { color: #1E3A8A; }
         }
-        @media(min-width:640px)  { .hero-band { margin:0 -1.5rem; padding-left:1.5rem; padding-right:1.5rem; } }
-        @media(min-width:1024px) { .hero-band { margin:0 -2rem;   padding-left:2rem;   padding-right:2rem; padding-bottom:6rem; } }
-
-        /* Degradê de saída do hero para o conteúdo */
-        .hero-band::after {
-            content:''; position:absolute; bottom:0; left:0; right:0; height:100px;
-            background: linear-gradient(to bottom, transparent 0%, #0f172a 100%);
-            pointer-events:none;
+        @keyframes brandSwapB {
+            0% { color: #F59E0B; }
+            50% { color: #1E3A8A; }
+            100% { color: #F59E0B; }
         }
+        .brand-swap-a { animation: brandSwapA 6s ease-in-out infinite; }
+        .brand-swap-b { animation: brandSwapB 6s ease-in-out infinite; }
 
         /* ── KPI pills ── */
         .stat-pill {
@@ -68,7 +61,7 @@
         .swiper-slide { height:auto; flex-shrink:0; }
 
         /* ── Content area (fundo mais claro) ── */
-        .content-area { background:#0f172a; margin:0 -1rem; padding:2.5rem 1rem; }
+        .content-area { margin:0 -1rem; padding:2.5rem 1rem; }
         @media(min-width:640px)  { .content-area { margin:0 -1.5rem; padding:2.5rem 1.5rem; } }
         @media(min-width:1024px) { .content-area { margin:0 -2rem;   padding:2.5rem 2rem; } }
 
@@ -115,217 +108,303 @@
     @endphp
 
     {{-- ══════════════════════════════════════════════════════
-         HEADER SLOT — slim, transparente, integrado ao hero
+         HEADER SLOT — topo compacto
          ══════════════════════════════════════════════════════ --}}
     <x-slot name="header">
-        <div class="flex items-center justify-between w-full">
-
-            {{-- Esquerda: logo micro + separador + contexto --}}
-            <div class="flex items-center gap-3">
-                <a href="{{ route('dashboard') }}" class="hover:opacity-80 transition shrink-0">
-                    <span class="font-black text-[15px] text-white tracking-tighter font-serif leading-none">
-                        Biblio<span class="text-[#F59E0B]">Tech</span>
-                    </span>
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between w-full">
+            <div class="flex items-center gap-3 w-full sm:max-w-xl">
+                <a href="{{ route('dashboard') }}" class="flex items-center gap-1.5 shrink-0">
+                    <span class="text-sm font-black tracking-tight font-serif brand-swap-a">Biblio</span>
+                    <span class="text-sm font-black tracking-tight font-serif brand-swap-b">Tech</span>
                 </a>
-                <span class="text-white/15 text-xl font-thin select-none">/</span>
-                <span class="text-[11px] font-medium text-gray-600 tracking-wide">Acervo</span>
+                <div class="relative w-full">
+                    <i class="ph ph-magnifying-glass pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 dark:text-gray-500 text-sm"></i>
+                    <input
+                        id="top-filter"
+                        type="text"
+                        placeholder="Buscar titulo, autor..."
+                        class="w-full bg-white dark:bg-[#0d1420] border border-slate-200 dark:border-white/10 rounded-lg pl-9 pr-3 py-2 text-xs text-slate-700 dark:text-gray-200 placeholder:text-slate-400 dark:placeholder:text-gray-600 focus:outline-none focus:border-[#1E3A8A] focus:ring-2 focus:ring-[#1E3A8A]/30"
+                    >
+                </div>
             </div>
 
-            {{-- Direita: ações rápidas + usuário --}}
-            <div class="flex items-center gap-2">
+            <div class="flex items-center justify-between sm:justify-end gap-2">
+                <div class="flex items-center gap-2">
+                    <button type="button" @click="dark = !dark" class="w-9 h-9 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition">
+                        <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
+                    </button>
+                    <button type="button" class="w-9 h-9 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition" aria-label="Notificacoes">
+                        <i class="ph ph-bell text-sm"></i>
+                    </button>
+                </div>
+
                 @auth
-                    @if(in_array(auth()->user()->tipo_usuario, ['gerente','bibliotecario']))
-                    <div class="hidden sm:flex items-center gap-1 mr-1">
-                        @if(auth()->user()->tipo_usuario === 'gerente')
-                        <a href="{{ route('bibliotecarios.create') }}"
-                           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
-                                  text-amber-400/60 hover:text-amber-400 hover:bg-amber-500/10
-                                  border border-transparent hover:border-amber-500/20 transition-all">
-                            <i class="ph ph-user-plus text-xs"></i>
-                            <span class="hidden lg:inline">Bibliotecário</span>
-                        </a>
-                        @endif
-                        <a href="{{ route('livros.create') }}"
-                           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
-                                  text-blue-400/60 hover:text-blue-400 hover:bg-blue-500/10
-                                  border border-transparent hover:border-blue-500/20 transition-all">
-                            <i class="ph ph-book-bookmark text-xs"></i>
-                            <span class="hidden lg:inline">Novo Livro</span>
-                        </a>
-                        <a href="{{ route('autores.create') }}"
-                           class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold
-                                  text-blue-400/60 hover:text-blue-400 hover:bg-blue-500/10
-                                  border border-transparent hover:border-blue-500/20 transition-all">
-                            <i class="ph ph-user-plus text-xs"></i>
-                            <span class="hidden lg:inline">Novo Autor</span>
-                        </a>
+                <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10">
+                    <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E3A8A] to-blue-700 flex items-center justify-center ring-1 ring-blue-500/30 shrink-0">
+                        <span class="text-white text-[10px] font-black tracking-tight select-none">{{ $iniciais }}</span>
                     </div>
-                    @endif
-                    <div class="h-5 w-px bg-white/10 hidden sm:block"></div>
-                    <div class="flex items-center gap-2.5">
-                        <div class="hidden sm:flex flex-col items-end leading-none gap-0.5">
-                            <span class="text-[11px] font-semibold text-gray-300">{{ $primeiroNome }}</span>
-                            <span class="text-[9px] font-bold uppercase tracking-widest {{ $isAdmin ? 'text-amber-500/60' : 'text-blue-500/60' }}">
-                                {{ ucfirst(auth()->user()->tipo_usuario) }}
-                            </span>
-                        </div>
-                        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E3A8A] to-blue-700
-                                    flex items-center justify-center ring-1 ring-blue-500/30
-                                    shadow-md shadow-blue-900/40 shrink-0">
-                            <span class="text-white text-[10px] font-black tracking-tight select-none">{{ $iniciais }}</span>
-                        </div>
-                    </div>
+                </div>
                 @endauth
             </div>
-
         </div>
     </x-slot>
 
-    {{-- ══════════════════════════════════════════════════════
-         HERO BAND 
-         ══════════════════════════════════════════════════════ --}}
-    <div class="hero-band">
-        <div class="max-w-7xl mx-auto">
-            <div class="flex flex-col md:flex-row items-start md:items-end justify-between gap-8 relative z-[1]">
-
-                <div id="hero-txt">
-                    <p class="text-[11px] font-bold uppercase tracking-[.18em] text-[#F59E0B] mb-3 flex items-center gap-2">
-                        <span class="inline-block w-6 h-px bg-[#F59E0B]"></span>
-                        {{ $saudacao }}
-                    </p>
-                    <h2 class="text-4xl md:text-5xl font-black text-white tracking-tight font-serif leading-[1.05]">
-                        @if($isAdmin)
-                            Painel do<br><span class="text-[#1E3A8A]">Acervo</span>
-                        @else
-                            Olá,<br><span class="text-[#F59E0B]">{{ $primeiroNome }}</span>
-                        @endif
-                    </h2>
-                    <p class="text-slate-500 text-sm mt-3 max-w-sm leading-relaxed">
-                        @if($isAdmin)
-                            Gerencie títulos, autores, empréstimos e membros num só lugar.
-                        @else
-                            Descubra sua próxima leitura entre
-                            <span class="text-gray-300 font-semibold">{{ $totalLivros }}</span>
-                            títulos disponíveis.
-                        @endif
-                    </p>
-                </div>
-
-                
-
-            </div>
-        </div>
-    </div>
-
     {{-- ══ CONTENT AREA ══ --}}
-    <div class="content-area">
-    <div class="max-w-7xl mx-auto space-y-16">
+    <div class="content-area bg-slate-50 dark:bg-[#0f172a]">
+        <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
 
-        {{-- ── Recomendações ── --}}
-        @if(isset($recomendados) && $recomendados->count())
+    {{-- Dot grid --}}
+    <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="bg-dots" width="28" height="28" patternUnits="userSpaceOnUse">
+                <circle id="bg-dot-circle" cx="1" cy="1" r="1" fill="#93c5fd" opacity="0.08"/>
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#bg-dots)"/>
+    </svg>
+
+    {{-- Glows --}}
+    <div id="bg-glow-1" class="absolute -top-28 -left-20 w-96 h-96 rounded-full blur-[90px]"></div>
+    <div id="bg-glow-2" class="absolute -bottom-20 -right-14 w-72 h-72 rounded-full blur-[80px]"></div>
+
+    {{-- Prateleiras --}}
+    <div class="bg-shelf absolute left-0 right-0 h-px" style="top:22%"></div>
+    <div class="bg-shelf absolute left-0 right-0 h-px" style="top:58%"></div>
+
+    {{-- Acento âmbar --}}
+    <div class="absolute top-0 left-0 w-[3px] h-32 bg-[#F59E0B] opacity-50"></div>
+
+    {{-- Ícones --}}
+    <i class="ph ph-book           bg-icon absolute" style="left:3%;  top:5%;  font-size:28px"></i>
+    <i class="ph ph-books          bg-icon absolute" style="left:87%; top:8%;  font-size:22px"></i>
+    <i class="ph ph-book-open      bg-icon absolute" style="left:14%; top:58%; font-size:34px"></i>
+    <i class="ph ph-book-bookmark  bg-icon absolute" style="left:74%; top:54%; font-size:26px"></i>
+    <i class="ph ph-bookmark       bg-icon absolute" style="left:44%; top:78%; font-size:18px"></i>
+    <i class="ph ph-bookmarks      bg-icon absolute" style="left:91%; top:72%; font-size:30px"></i>
+    <i class="ph ph-graduation-cap bg-icon absolute" style="left:59%; top:12%; font-size:24px"></i>
+    <i class="ph ph-scroll         bg-icon absolute" style="left:29%; top:30%; font-size:16px"></i>
+    <i class="ph ph-library        bg-icon absolute" style="left:68%; top:36%; font-size:28px"></i>
+    <i class="ph ph-notebook       bg-icon absolute" style="left:80%; top:22%; font-size:20px"></i>
+    <i class="ph ph-book           bg-icon absolute" style="left:8%;  top:80%; font-size:22px"></i>
+    <i class="ph ph-book-open      bg-icon absolute" style="left:50%; top:44%; font-size:14px"></i>
+</div>
+    <div class="max-w-7xl mx-auto space-y-16 z-10">
+
+        <div id="dashboard-home" class="space-y-16">
         <section class="gs-section">
-            <div class="flex items-end justify-between mb-7">
-                <div class="flex items-end gap-4">
-                    <span class="section-num select-none">★</span>
-                    <div class="pb-1">
-                        <p class="text-[10px] font-bold uppercase tracking-[.15em] text-amber-500 mb-1">Curadoria pessoal</p>
-                        <h2 class="text-xl md:text-2xl font-black text-white font-serif">Recomendações para você</h2>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-3 bg-white dark:bg-[#0d1420] border border-slate-200 dark:border-white/5 rounded-md p-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-1">Bem-vindo</p>
+                        <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white font-serif">Ola, {{ $primeiroNome }}</h2>
+                        <p class="text-slate-600 dark:text-gray-500 text-sm mt-1">Seu painel do acervo esta pronto para hoje.</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <div class="px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-gray-500">Titulos</p>
+                            <p class="text-lg font-black text-slate-900 dark:text-white">{{ $totalLivros }}</p>
+                        </div>
+                        <div class="px-4 py-3 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+                            <p class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-gray-500">Emprestimos</p>
+                            <p class="text-lg font-black text-slate-900 dark:text-white">{{ $emprestimosAtivos }}</p>
+                        </div>
                     </div>
                 </div>
-            </div>
-            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                @foreach($recomendados as $livro)
-                <div class="book-card group bg-[#0d1420] rounded-xl overflow-hidden border border-white/5 hover:border-amber-500/30 transition-all flex flex-col">
-                    <a href="{{ route('livros.show', $livro->id) }}" class="flex-grow flex flex-col">
-                        <div class="book-cover-wrap">
-                            @if($livro->capa)
-                                <img src="{{ asset('storage/' . $livro->capa) }}" alt="{{ $livro->titulo }}" loading="lazy">
-                            @else
-                                <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-amber-900/20 to-[#080d14]">
-                                    <i class="ph ph-book text-3xl text-amber-900/40"></i>
+
+                <div class="lg:col-span-2 bg-white dark:bg-[#0d1420] border border-slate-200 dark:border-white/5 rounded-md p-5">
+                    <div class="flex items-center justify-between mb-5">
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Livros</h3>
+                        <span class="text-[10px] text-slate-500 dark:text-gray-500">Populares e recentes</span>
+                    </div>
+
+                    <div class="space-y-7">
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[11px] font-bold uppercase tracking-[.15em] text-amber-500">Populares</p>
+                                <a href="#acervo-section" class="text-[10px] text-amber-500 uppercase tracking-widest font-bold">Ver mais</a>
+                            </div>
+                            <div class="swiper" id="swiper-populares">
+                                <div class="swiper-wrapper">
+                                    @php
+                                        $populares = (isset($bestsellers) && $bestsellers->count()) ? $bestsellers->take(10) : $livros->take(10);
+                                    @endphp
+                                    @foreach($populares as $livro)
+                                    <div class="swiper-slide !w-44 sm:!w-48 lg:!w-52">
+                                        <a href="{{ route('livros.show', $livro->id) }}" class="group block">
+                                            <div class="relative w-full h-64 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/10">
+                                                @if($livro->capa)
+                                                    <img src="{{ asset('storage/' . $livro->capa) }}" alt="{{ $livro->titulo }}" class="w-full h-full object-cover">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center">
+                                                        <i class="ph ph-book text-2xl text-slate-400"></i>
+                                                    </div>
+                                                @endif
+                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                    <span class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest bg-white text-slate-900">Ver mais</span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ $livro->titulo }}</p>
+                                                <p class="text-[11px] text-slate-500 dark:text-gray-500 truncate">{{ $livro->autor->nome ?? '' }}</p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    @endforeach
                                 </div>
-                            @endif
+                            </div>
                         </div>
-                        <div class="p-3 flex-grow">
-                            <span class="text-[9px] font-bold uppercase tracking-widest text-amber-500/70">{{ $livro->categoria ?? 'Geral' }}</span>
-                            <h4 class="text-white text-xs font-semibold truncate mt-0.5 group-hover:text-amber-400 transition-colors">{{ $livro->titulo }}</h4>
-                            <p class="text-gray-500 text-[11px] truncate mt-0.5">{{ $livro->autor->nome ?? '' }}</p>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-3">
+                                <p class="text-[11px] font-bold uppercase tracking-[.15em] text-blue-500">Recentes</p>
+                                <a href="#acervo-section" class="text-[10px] text-blue-500 uppercase tracking-widest font-bold">Ver mais</a>
+                            </div>
+                            <div class="swiper" id="swiper-recentes">
+                                <div class="swiper-wrapper">
+                                    @php
+                                        $recentes = (isset($livrosRecentes) && $livrosRecentes->count()) ? $livrosRecentes->take(10) : $livros->take(10);
+                                    @endphp
+                                    @foreach($recentes as $livro)
+                                    <div class="swiper-slide !w-44 sm:!w-48 lg:!w-52">
+                                        <a href="{{ route('livros.show', $livro->id) }}" class="group block">
+                                            <div class="relative w-full h-64 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/10">
+                                                @if($livro->capa)
+                                                    <img src="{{ asset('storage/' . $livro->capa) }}" alt="{{ $livro->titulo }}" class="w-full h-full object-cover">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center">
+                                                        <i class="ph ph-book text-2xl text-slate-400"></i>
+                                                    </div>
+                                                @endif
+                                                <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                                                    <span class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest bg-white text-slate-900">Ver mais</span>
+                                                </div>
+                                            </div>
+                                            <div class="mt-2">
+                                                <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ $livro->titulo }}</p>
+                                                <p class="text-[11px] text-slate-500 dark:text-gray-500 truncate">{{ $livro->autor->nome ?? '' }}</p>
+                                            </div>
+                                        </a>
+                                    </div>
+                                    @endforeach
+                                </div>
+                            </div>
                         </div>
-                    </a>
+                    </div>
                 </div>
-                @endforeach
+
+                <div class="lg:col-span-1 bg-white dark:bg-[#0d1420] border border-slate-200 dark:border-white/5 rounded-md p-5">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-widest">Meus alugueis</h3>
+                        <a href="{{ route('emprestimos.historico') }}" class="text-[10px] text-blue-500 uppercase tracking-widest font-bold">Ver todos</a>
+                    </div>
+                    @if(isset($emprestimosDoMembro) && $emprestimosDoMembro->count())
+                        <div class="space-y-4">
+                            @foreach($emprestimosDoMembro->take(4) as $emp)
+                                @php
+                                    $hoje = \Carbon\Carbon::today();
+                                    $inicio = $emp->data_emprestimo;
+                                    $fim = $emp->data_devolucao_prevista;
+                                    $total = max(1, $inicio->diffInDays($fim));
+                                    $passado = $inicio->diffInDays($hoje);
+                                    $progress = min(100, round($passado / $total * 100));
+                                    $diasRestantes = $hoje->diffInDays($fim, false);
+                                    $atrasado = $diasRestantes < 0;
+                                    $progressClass = $atrasado ? 'bg-red-500' : ($progress > 75 ? 'bg-amber-500' : 'bg-blue-500');
+                                @endphp
+                                <div class="flex gap-3">
+                                    <div class="w-10 h-14 rounded-md overflow-hidden bg-slate-100 dark:bg-white/10 flex items-center justify-center shrink-0">
+                                        @if($emp->livro?->capa)
+                                            <img src="{{ asset('storage/' . $emp->livro->capa) }}" alt="{{ $emp->livro?->titulo }}" class="w-full h-full object-cover">
+                                        @else
+                                            <i class="ph ph-book text-sm text-slate-400"></i>
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <div class="flex items-center justify-between gap-2">
+                                            <p class="text-sm font-semibold text-slate-900 dark:text-white truncate">{{ $emp->livro?->titulo ?? '—' }}</p>
+                                            <span class="text-[10px] font-bold uppercase tracking-widest {{ $atrasado ? 'text-red-500' : 'text-emerald-500' }}">
+                                                {{ $atrasado ? 'Vencido' : 'Ativo' }}
+                                            </span>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 dark:text-gray-500">Expira em {{ $fim->format('d/m') }}</p>
+                                        <div class="mt-2 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 overflow-hidden">
+                                            <div class="progress-fill {{ $progressClass }} h-full" data-progress="{{ $progress }}"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <div class="text-center py-6 text-slate-500 dark:text-gray-500 text-sm">
+                            Nenhum aluguel ativo.
+                        </div>
+                    @endif
+                </div>
             </div>
         </section>
-        @endif
 
-        {{-- ── Últimos Lançamentos ── --}}
+        {{-- ── Autores em Destaque ── --}}
         <section class="gs-section">
             <div class="flex items-end justify-between mb-7">
                 <div class="flex items-end gap-4">
-                    <span class="section-num select-none">01</span>
-                    <div class="pb-1">
-                        <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-1">Acervo</p>
-                        <h2 class="text-xl md:text-2xl font-black text-white font-serif">Últimos Lançamentos</h2>
+                    <div class="">
+                        <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-1">Criadores</p>
+                        <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white font-serif">Autores em Destaque</h2>
                     </div>
                 </div>
                 <div class="flex gap-2 pb-1">
-                    <button id="swiper-livros-prev" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#1E3A8A] hover:border-[#1E3A8A] hover:text-white transition-all"><i class="ph ph-caret-left"></i></button>
-                    <button id="swiper-livros-next" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#1E3A8A] hover:border-[#1E3A8A] hover:text-white transition-all"><i class="ph ph-caret-right"></i></button>
+                    <button id="swiper-autores-prev" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all"><i class="ph ph-caret-left"></i></button>
+                    <button id="swiper-autores-next" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all"><i class="ph ph-caret-right"></i></button>
                 </div>
             </div>
-            <div class="swiper swiperLivros">
+            <div class="swiper swiperAutores" style="padding-top:42px;">
                 <div class="swiper-wrapper">
-                    @foreach($livros as $livro)
+                    @foreach($autores as $autor)
                     <div class="swiper-slide">
-                        <div class="book-card group bg-[#0d1420] rounded-xl overflow-hidden border border-white/5 hover:border-[#1E3A8A]/50 transition-all flex flex-col h-full">
-                            <a href="{{ route('livros.show', $livro->id) }}" class="flex-grow flex flex-col">
-                                <div class="book-cover-wrap">
-                                    @if($livro->capa)
-                                        <img src="{{ asset('storage/' . $livro->capa) }}" alt="{{ $livro->titulo }}" loading="lazy">
-                                    @else
-                                        <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-900/20 to-[#080d14]"><i class="ph ph-book text-3xl text-blue-900/40"></i></div>
-                                    @endif
-                                    <div class="absolute inset-0 bg-[#080d14]/94 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-5 gap-3">
-                                        <p class="text-gray-300 text-[11px] leading-relaxed line-clamp-5">{{ $livro->sinopse ?? 'Sinopse não disponível.' }}</p>
-                                        <span class="px-4 py-1.5 bg-[#1E3A8A] text-white rounded-lg text-[11px] font-semibold mt-1 shrink-0">Ver obra</span>
-                                    </div>
-                                </div>
-                                <div class="p-4 flex-grow flex flex-col gap-1">
-                                    <div class="flex items-center justify-between">
-                                        <span class="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-[#1E3A8A]/20 text-blue-400 rounded border border-[#1E3A8A]/30">{{ $livro->categoria ?? 'Geral' }}</span>
-                                        <span class="text-[10px] text-gray-600">{{ \Carbon\Carbon::parse($livro->data_publicacao)->format('Y') }}</span>
-                                    </div>
-                                    <h4 class="text-white text-sm font-semibold truncate group-hover:text-blue-400 transition-colors">{{ $livro->titulo }}</h4>
-                                    <p class="text-gray-500 text-xs truncate flex items-center gap-1">
-                                        <i class="ph ph-pen-nib text-xs shrink-0"></i>
-                                        <a href="{{ route('autores.show', $livro->autor->id) }}" class="hover:text-[#F59E0B] transition truncate">{{ $livro->autor->nome }}</a>
-                                    </p>
-                                </div>
-                            </a>
-                            @if($isAdmin)
-                            <div class="px-4 pb-3 pt-2 border-t border-white/5 flex items-center justify-between shrink-0">
-                                <a href="{{ route('livros.edit', $livro->id) }}" class="text-[11px] text-gray-500 hover:text-[#F59E0B] transition flex items-center gap-1"><i class="ph ph-pencil-simple"></i> Editar</a>
-                                <form action="{{ route('livros.destroy', $livro->id) }}" method="POST" class="form-delete">
-                                    @csrf @method('DELETE')
-                                    <button type="button" class="btn-delete text-[11px] text-gray-600 hover:text-red-400 transition flex items-center gap-1"><i class="ph ph-trash"></i> Excluir</button>
-                                </form>
+                        <div class="group bg-white dark:bg-[#0d1420] rounded-xl border border-slate-200 dark:border-white/5 hover:border-[#2563EB]/40 transition-all flex flex-col text-center pb-4 px-4 h-full">
+                            <div class="author-avatar shrink-0">
+                                @if($autor->foto)
+                                    <img src="{{ asset('storage/' . $autor->foto) }}" class="w-full h-full object-cover" alt="{{ $autor->nome }}">
+                                @else
+                                    <div class="w-full h-full flex items-center justify-center bg-[#111827]"><i class="ph ph-user text-2xl text-gray-600"></i></div>
+                                @endif
                             </div>
-                            @endif
+                            <a href="{{ route('autores.show', $autor->id) }}" class="flex-grow flex flex-col">
+                                <h4 class="text-slate-900 dark:text-white font-bold text-sm tracking-tight mt-1 group-hover:text-blue-400 transition-colors">{{ $autor->nome }}</h4>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-600 dark:text-gray-600 mt-0.5 mb-2">{{ $autor->nacionalidade ?? 'N/A' }}</p>
+                                <p class="text-slate-600 dark:text-gray-500 text-xs line-clamp-3 leading-relaxed px-1">{{ Str::limit($autor->biografia ?? 'Biografia não cadastrada.', 90) }}</p>
+                            </a>
+                            <div class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between shrink-0">
+                                <span class="text-[10px] text-slate-600 dark:text-gray-600 flex items-center gap-1">
+                                    <i class="ph ph-books text-xs"></i>
+                                    {{ $autor->livros_count }} {{ $autor->livros_count === 1 ? 'obra' : 'obras' }}
+                                </span>
+                                @if($isAdmin)
+                                <div class="flex gap-3">
+                                    <a href="{{ route('autores.edit', $autor->id) }}" class="text-gray-600 hover:text-[#F59E0B] transition"><i class="ph ph-pencil-simple text-xs"></i></a>
+                                    <form action="{{ route('autores.destroy', $autor->id) }}" method="POST" class="form-delete inline">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="btn-delete text-gray-600 hover:text-red-400 transition"><i class="ph ph-trash text-xs"></i></button>
+                                    </form>
+                                </div>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     @endforeach
                 </div>
             </div>
         </section>
+        </div>
 
-        {{-- ══ EXPLORAR ACERVO ══ --}}
-        <section id="acervo-section" class="gs-section">
+        {{-- ══ ACERVO (busca global) ══ --}}
+        <section id="acervo-section" class="gs-section hidden">
             <div class="flex items-end justify-between mb-7">
                 <div class="flex items-end gap-4">
                     <span class="section-num select-none">02</span>
                     <div class="pb-1">
                         <p class="text-[10px] font-bold uppercase tracking-[.15em] text-emerald-500 mb-1">Busca & Filtros</p>
-                        <h2 class="text-xl md:text-2xl font-black text-white font-serif">Explorar Acervo</h2>
+                        <h2 class="text-xl md:text-2xl font-black text-slate-900 dark:text-white font-serif">Acervo</h2>
                     </div>
                 </div>
                 <div class="pb-1 flex items-center gap-3">
@@ -335,7 +414,7 @@
                     </button>
                 </div>
             </div>
-            <div class="mb-8 p-4 sm:p-5 bg-[#0d1420] rounded-2xl border border-white/[.06] shadow-xl shadow-black/30" id="filter-bar">
+            <div class="mb-8 p-4 sm:p-5 bg-white dark:bg-[#0d1420] rounded-2xl border border-slate-200 dark:border-white/[.06] shadow-xl shadow-black/30" id="filter-bar">
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="sm:col-span-2 lg:col-span-1">
                         <label class="filter-label" for="filter-search">Buscar</label>
@@ -376,7 +455,7 @@
             </div>
             <div id="acervo-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
                 @foreach($livros as $livro)
-                <div class="book-card acervo-card group bg-[#0d1420] rounded-xl overflow-hidden border border-white/5 hover:border-emerald-500/30 transition-all flex flex-col"
+                <div class="book-card acervo-card group bg-white dark:bg-[#0d1420] rounded-xl overflow-hidden border border-slate-200 dark:border-white/5 hover:border-emerald-500/30 transition-all flex flex-col"
                      data-titulo="{{ strtolower($livro->titulo) }}"
                      data-autor-nome="{{ strtolower($livro->autor->nome ?? '') }}"
                      data-autor-id="{{ $livro->autor_id }}"
@@ -396,8 +475,8 @@
                         </div>
                         <div class="p-3 flex-grow flex flex-col gap-0.5">
                             <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-500/70">{{ $livro->categoria ?? 'Geral' }}</span>
-                            <h4 class="text-white text-xs font-semibold truncate group-hover:text-emerald-400 transition-colors">{{ $livro->titulo }}</h4>
-                            <p class="text-gray-500 text-[11px] truncate">{{ $livro->autor->nome ?? '' }}</p>
+                            <h4 class="text-slate-900 dark:text-white text-xs font-semibold truncate group-hover:text-emerald-400 transition-colors">{{ $livro->titulo }}</h4>
+                            <p class="text-slate-600 dark:text-gray-500 text-[11px] truncate">{{ $livro->autor->nome ?? '' }}</p>
                         </div>
                     </a>
                     @if($isAdmin)
@@ -413,68 +492,12 @@
                 @endforeach
             </div>
             <div id="empty-state" class="text-center py-20">
-                <div class="w-16 h-16 rounded-2xl bg-[#0d1420] border border-white/[.06] flex items-center justify-center mx-auto mb-4">
-                    <i class="ph ph-magnifying-glass text-2xl text-gray-700"></i>
+                <div class="w-16 h-16 rounded-2xl bg-white dark:bg-[#0d1420] border border-slate-200 dark:border-white/[.06] flex items-center justify-center mx-auto mb-4">
+                    <i class="ph ph-magnifying-glass text-2xl text-slate-500 dark:text-gray-700"></i>
                 </div>
-                <p class="text-gray-500 font-semibold text-sm">Nenhum livro encontrado</p>
-                <p class="text-gray-700 text-xs mt-1">Tente ajustar os filtros</p>
+                <p class="text-slate-700 dark:text-gray-500 font-semibold text-sm">Nenhum livro encontrado</p>
+                <p class="text-slate-500 dark:text-gray-700 text-xs mt-1">Tente ajustar os filtros</p>
                 <button id="clear-filters-btn" class="mt-5 px-5 py-2 text-xs font-bold uppercase tracking-widest text-emerald-400 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/10 transition">Limpar filtros</button>
-            </div>
-        </section>
-
-        </div>{{-- /hidden acervo --}}
-
-        {{-- ── Autores em Destaque ── --}}
-        <section class="gs-section">
-            <div class="flex items-end justify-between mb-7">
-                <div class="flex items-end gap-4">
-                    <span class="section-num select-none">03</span>
-                    <div class="pb-1">
-                        <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-1">Criadores</p>
-                        <h2 class="text-xl md:text-2xl font-black text-white font-serif">Autores em Destaque</h2>
-                    </div>
-                </div>
-                <div class="flex gap-2 pb-1">
-                    <button id="swiper-autores-prev" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all"><i class="ph ph-caret-left"></i></button>
-                    <button id="swiper-autores-next" class="w-9 h-9 shrink-0 rounded-lg flex items-center justify-center bg-white/5 border border-white/10 text-gray-400 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white transition-all"><i class="ph ph-caret-right"></i></button>
-                </div>
-            </div>
-            <div class="swiper swiperAutores" style="padding-top:42px;">
-                <div class="swiper-wrapper">
-                    @foreach($autores as $autor)
-                    <div class="swiper-slide">
-                        <div class="group bg-[#0d1420] rounded-xl border border-white/5 hover:border-[#2563EB]/40 transition-all flex flex-col text-center pb-4 px-4 h-full">
-                            <div class="author-avatar shrink-0">
-                                @if($autor->foto)
-                                    <img src="{{ asset('storage/' . $autor->foto) }}" class="w-full h-full object-cover" alt="{{ $autor->nome }}">
-                                @else
-                                    <div class="w-full h-full flex items-center justify-center bg-[#111827]"><i class="ph ph-user text-2xl text-gray-600"></i></div>
-                                @endif
-                            </div>
-                            <a href="{{ route('autores.show', $autor->id) }}" class="flex-grow flex flex-col">
-                                <h4 class="text-white font-bold text-sm tracking-tight mt-1 group-hover:text-blue-400 transition-colors">{{ $autor->nome }}</h4>
-                                <p class="text-[10px] uppercase tracking-widest text-gray-600 mt-0.5 mb-2">{{ $autor->nacionalidade ?? 'N/A' }}</p>
-                                <p class="text-gray-500 text-xs line-clamp-3 leading-relaxed px-1">{{ Str::limit($autor->biografia ?? 'Biografia não cadastrada.', 90) }}</p>
-                            </a>
-                            <div class="mt-3 pt-3 border-t border-white/5 flex items-center justify-between shrink-0">
-                                <span class="text-[10px] text-gray-600 flex items-center gap-1">
-                                    <i class="ph ph-books text-xs"></i>
-                                    {{ $autor->livros_count }} {{ $autor->livros_count === 1 ? 'obra' : 'obras' }}
-                                </span>
-                                @if($isAdmin)
-                                <div class="flex gap-3">
-                                    <a href="{{ route('autores.edit', $autor->id) }}" class="text-gray-600 hover:text-[#F59E0B] transition"><i class="ph ph-pencil-simple text-xs"></i></a>
-                                    <form action="{{ route('autores.destroy', $autor->id) }}" method="POST" class="form-delete inline">
-                                        @csrf @method('DELETE')
-                                        <button type="button" class="btn-delete text-gray-600 hover:text-red-400 transition"><i class="ph ph-trash text-xs"></i></button>
-                                    </form>
-                                </div>
-                                @endif
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
             </div>
         </section>
 
@@ -484,7 +507,57 @@
     {{-- ══ SCRIPTS ══ --}}
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+    const DARK  = '#93c5fd';
+    const LIGHT = '#F59E0B'; // âmbar no modo claro
+
+    function applyBgTheme() {
+        const dark   = document.documentElement.classList.contains('dark');
+        const icons  = document.querySelectorAll('.bg-icon');
+        const dot    = document.getElementById('bg-dot-circle');
+        const glow1  = document.getElementById('bg-glow-1');
+        const glow2  = document.getElementById('bg-glow-2');
+        const shelves = document.querySelectorAll('.bg-shelf');
+
+        icons.forEach(el => el.style.color = dark ? DARK : LIGHT);
+        dot?.setAttribute('fill', dark ? DARK : '#1E3A8A');
+        shelves.forEach(s => s.style.background = dark
+            ? 'rgba(255,255,255,0.025)'
+            : 'rgba(15,23,42,0.06)');
+        if (glow1) glow1.style.background = dark
+            ? 'rgba(30,58,138,0.18)' : 'rgba(30,58,138,0.06)';
+        if (glow2) glow2.style.background = dark
+            ? 'rgba(245,158,11,0.09)' : 'rgba(245,158,11,0.04)';
+    }
+
+    // Animação via GSAP (já carregado no dashboard)
+    document.querySelectorAll('.bg-icon').forEach(el => {
+        gsap.set(el, { opacity: gsap.utils.random(0.03, 0.07) });
+        gsap.to(el, {
+            y:        gsap.utils.random(-8, -14),
+            rotation: gsap.utils.random(-8, 8),
+            opacity:  gsap.utils.random(0.05, 0.09),
+            duration: gsap.utils.random(8, 20),
+            repeat:   -1,
+            yoyo:     true,
+            ease:     'sine.inOut',
+            delay:    gsap.utils.random(0, 14),
+        });
+    });
+
+    // Aplica tema inicial e observa mudanças do Alpine
+    applyBgTheme();
+    new MutationObserver(applyBgTheme)
+        .observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+});
     document.addEventListener('DOMContentLoaded', function () {
+
+        // Progress bars
+        document.querySelectorAll('.progress-fill[data-progress]').forEach(el => {
+            const pct = Number(el.dataset.progress || 0);
+            el.style.width = `${Math.max(0, Math.min(100, pct))}%`;
+        });
 
         // CountUp
         function animateCounter(el) {
@@ -506,7 +579,18 @@
         });
 
         // Swipers
-        new Swiper('.swiperLivros',{loop:true,grabCursor:true,slidesPerView:1.3,spaceBetween:14,breakpoints:{480:{slidesPerView:2.2,spaceBetween:16},768:{slidesPerView:3,spaceBetween:18},1024:{slidesPerView:4,spaceBetween:20}},autoplay:{delay:3200,disableOnInteraction:false,pauseOnMouseEnter:true},navigation:{nextEl:'#swiper-livros-next',prevEl:'#swiper-livros-prev'}});
+        new Swiper('#swiper-populares', {
+            slidesPerView: 'auto',
+            spaceBetween: 14,
+            grabCursor: true,
+            autoplay: { delay: 2600, disableOnInteraction: false, pauseOnMouseEnter: true },
+        });
+        new Swiper('#swiper-recentes', {
+            slidesPerView: 'auto',
+            spaceBetween: 14,
+            grabCursor: true,
+            autoplay: { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true },
+        });
         new Swiper('.swiperAutores',{loop:true,grabCursor:true,slidesPerView:1.4,spaceBetween:14,breakpoints:{480:{slidesPerView:2.5,spaceBetween:16},768:{slidesPerView:3.5,spaceBetween:18},1024:{slidesPerView:5,spaceBetween:20}},autoplay:{delay:3600,disableOnInteraction:false,pauseOnMouseEnter:true},navigation:{nextEl:'#swiper-autores-next',prevEl:'#swiper-autores-prev'}});
 
         // Tom Select
@@ -523,6 +607,14 @@
         const clearBtn=document.getElementById('clear-all-btn');
         const clearBtn2=document.getElementById('clear-filters-btn');
         const chipsEl=document.getElementById('active-filters');
+        const dashboardHome = document.getElementById('dashboard-home');
+        const acervoSection = document.getElementById('acervo-section');
+
+        function toggleAcervoView(value) {
+            const showAcervo = value.trim().length > 0;
+            dashboardHome?.classList.toggle('hidden', showAcervo);
+            acervoSection?.classList.toggle('hidden', !showAcervo);
+        }
 
         function applyFilters(){
             const search=document.getElementById('filter-search').value.toLowerCase().trim();
@@ -552,12 +644,21 @@
             if(chips.length){chips.forEach(({label,clear})=>{const b=document.createElement('button');b.className='filter-chip';b.innerHTML=`<span>${label}</span><i class="ph ph-x" style="font-size:.75rem;color:#60a5fa"></i>`;b.addEventListener('click',clear);chipsEl.appendChild(b);});chipsEl.style.setProperty('display','flex','important');}
             else{chipsEl.style.setProperty('display','none','important');}
             if(visible>0)gsap.fromTo([...allCards].filter(c=>c.style.display!=='none'),{opacity:0,y:8},{opacity:1,y:0,duration:.28,stagger:.025,ease:'power2.out',clearProps:'transform'});
+            toggleAcervoView(search);
         }
 
         function clearAll(){document.getElementById('filter-search').value='';tsCategoria.setValue('');tsAutor.setValue('');tsSort.setValue('recente');applyFilters();}
 
         let dbTimer;
         document.getElementById('filter-search').addEventListener('input',()=>{clearTimeout(dbTimer);dbTimer=setTimeout(applyFilters,250);});
+        document.getElementById('top-filter')?.addEventListener('input', e => {
+            const searchEl = document.getElementById('filter-search');
+            if (searchEl) {
+                searchEl.value = e.target.value;
+                clearTimeout(dbTimer);
+                dbTimer = setTimeout(applyFilters, 150);
+            }
+        });
         tsCategoria.on('change',applyFilters);tsAutor.on('change',applyFilters);tsSort.on('change',applyFilters);
         clearBtn.addEventListener('click',clearAll);clearBtn2.addEventListener('click',clearAll);
         applyFilters();
@@ -570,6 +671,7 @@
             });
         });
     });
+    
     </script>
 
     @if(session('success'))

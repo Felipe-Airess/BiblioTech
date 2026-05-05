@@ -44,13 +44,9 @@ Route::post('/membros/salvar', [MembrosController::class, 'store'])->name('membr
 Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->name('livros.alugar'); // Só membros podem alugar livros
 Route::get('/livros/{id}', [LivroController::class, 'show'])->name('livros.show'); // Rotas públicas para listar e ver detalhes dos livros
 
-use Illuminate\Support\Facades\App;
-Route::get('/dashboard', function () {
-    $livros = \App\Models\Livros::with('autor')->latest()->get();
-    $autores = \App\Models\Autor::withCount('livros')->latest()->get();
-    $recomendados = App::make(\App\Http\Controllers\LivroController::class)->recomendarParaUsuario();
-    return view('dashboard', compact('livros', 'autores', 'recomendados'));
-})->middleware(['auth:web,membro'])->name('dashboard');
+Route::get('/dashboard', [LivroController::class, 'dashboard'])
+    ->middleware(['auth:web,membro'])
+    ->name('dashboard');
 
 
     Route::middleware(['auth:web,membro'])->group(function () {
