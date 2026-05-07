@@ -1,12 +1,60 @@
 <x-app-layout>
     <x-slot name="header">
-        <div class="flex items-center gap-3">
-            <i class="ph ph-books text-[#F59E0B] text-2xl"></i>
-            <h2 class="font-semibold text-xl text-white leading-tight tracking-tight">
-                Painel de Empréstimos
-            </h2>
+        <div class="flex items-center justify-between w-full gap-4">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center gap-1 shrink-0">
+                    <i class="ph ph-library text-[#1E3A8A] dark:text-blue-400 text-4xl"></i>
+                    <div class="text-[11px] font-black tracking-tight text-center leading-tight">
+                        <span class="text-[#1E3A8A] dark:text-blue-400">BIBLIO</span><br>
+                        <span class="text-[#F59E0B]">TECH</span>
+                    </div>
+                </a>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-amber-500 mb-0.5">Admin</p>
+                    <h1 class="text-lg font-black text-slate-900 dark:text-white">Painel de Empréstimos</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="dark = !dark" class="w-9 h-9 rounded-md bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition">
+                    <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
+                </button>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E3A8A] to-blue-700 flex items-center justify-center ring-1 ring-blue-500/30 shrink-0">
+                    <span class="text-white text-[10px] font-black tracking-tight select-none">{{ auth()->user()->nome ? collect(explode(' ', auth()->user()->nome))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('') : 'AD' }}</span>
+                </div>
+            </div>
         </div>
     </x-slot>
+
+    <style>
+        .bg-shelf { background: linear-gradient(90deg, transparent, rgba(147,197,253,.07) 20%, rgba(147,197,253,.07) 80%, transparent); }
+        .bg-icon  { color: rgba(147,197,253,.07); pointer-events: none; user-select: none; }
+        #bg-glow-1 { background: radial-gradient(circle, rgba(30,58,138,.3) 0%, transparent 70%); }
+        #bg-glow-2 { background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%); }
+    </style>
+
+    <div class="-mx-4 px-4 py-10 bg-slate-50 dark:bg-[#0f172a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 min-h-screen relative">
+
+        {{-- ══ DECORATIVE BACKGROUND ══ --}}
+        <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="bg-dots-emprestimos" width="28" height="28" patternUnits="userSpaceOnUse">
+                        <circle cx="1" cy="1" r="1" fill="#93c5fd" opacity="0.08"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#bg-dots-emprestimos)"/>
+            </svg>
+            <div id="bg-glow-1" class="absolute -top-28 -left-20 w-96 h-96 rounded-full blur-[90px]"></div>
+            <div id="bg-glow-2" class="absolute -bottom-20 -right-14 w-72 h-72 rounded-full blur-[80px]"></div>
+            <div class="bg-shelf absolute left-0 right-0 h-px top-[22%]"></div>
+            <div class="bg-shelf absolute left-0 right-0 h-px top-[58%]"></div>
+            <i class="ph ph-book-open bg-icon absolute left-[3%] top-[5%] text-[28px]"></i>
+            <i class="ph ph-hand-coins bg-icon absolute left-[87%] top-[8%] text-[22px]"></i>
+            <i class="ph ph-calendar-blank bg-icon absolute left-[14%] top-[58%] text-[34px]"></i>
+            <i class="ph ph-clipboard-text bg-icon absolute left-[74%] top-[54%] text-[26px]"></i>
+        </div>
+
+        <div class="max-w-7xl mx-auto relative z-10 space-y-8">
 
     {{-- DataTables CDN (sem CSS padrão — tema custom abaixo) --}}
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -135,18 +183,19 @@
     </style>
 
     @php
-        $ativos     = $emprestimos->where('data_devolucao_real', null)->count();
-        $atrasados  = $emprestimos->where('data_devolucao_real', null)
-                        ->filter(fn($e) => \Carbon\Carbon::today()->greaterThan($e->data_devolucao_prevista))
-                        ->count();
-        $concluidos = $emprestimos->whereNotNull('data_devolucao_real')->count();
-        $multas     = $emprestimos->sum('valor_multa');
+        $solicitados = $emprestimos->where('status', \App\Models\Emprestimos::STATUS_SOLICITADO)->count();
+        $aprovados   = $emprestimos->where('status', \App\Models\Emprestimos::STATUS_APROVADO)->count();
+        $emUso       = $emprestimos->whereIn('status', [\App\Models\Emprestimos::STATUS_RETIRADO, \App\Models\Emprestimos::STATUS_EM_USO, \App\Models\Emprestimos::STATUS_DEVOLUCAO_SOLICITADA])->count();
+        $atrasados   = $emprestimos->filter(fn($e) => $e->isAtrasado())->count();
+        $concluidos  = $emprestimos->whereIn('status', [\App\Models\Emprestimos::STATUS_DEVOLVIDO, \App\Models\Emprestimos::STATUS_ENCERRADO])->count();
+        $rejeitados  = $emprestimos->where('status', \App\Models\Emprestimos::STATUS_REJEITADO)->count();
+        $multas      = $emprestimos->sum('valor_multa');
     @endphp
 
     <div class="max-w-7xl mx-auto space-y-5">
 
         {{-- ── Cards compactos clicáveis ── --}}
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        <div class="grid grid-cols-2 lg:grid-cols-6 gap-3">
 
             <button onclick="filtrarCard(this, 'todos', 'Todos os registros')"
                     class="card-filtro c-all ativo bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
@@ -160,31 +209,55 @@
                 </div>
             </button>
 
-            <button onclick="filtrarCard(this, 'Ativo', 'Empréstimos ativos')"
+                <button onclick="filtrarCard(this, 'Solicitado', 'Solicitações')"
                     class="card-filtro c-ok bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
                            flex items-center gap-3 hover:border-blue-700/60 transition-all text-left w-full">
                 <span class="w-8 h-8 rounded-lg bg-blue-900/30 flex items-center justify-center shrink-0">
-                    <i class="ph ph-book-open text-blue-400 text-base"></i>
+                    <i class="ph ph-handshake text-blue-400 text-base"></i>
                 </span>
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Ativos</p>
-                    <p class="text-xl font-black text-white leading-tight font-serif">{{ $ativos }}</p>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Solicitados</p>
+                    <p class="text-xl font-black text-white leading-tight font-serif">{{ $solicitados }}</p>
+                </div>
+            </button>
+
+            <button onclick="filtrarCard(this, 'Aprovado', 'Aprovados')"
+                    class="card-filtro c-ok bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
+                           flex items-center gap-3 hover:border-indigo-700/60 transition-all text-left w-full">
+                <span class="w-8 h-8 rounded-lg bg-indigo-900/30 flex items-center justify-center shrink-0">
+                    <i class="ph ph-check text-indigo-300 text-base"></i>
+                </span>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Aprovados</p>
+                    <p class="text-xl font-black text-white leading-tight font-serif">{{ $aprovados }}</p>
+                </div>
+            </button>
+
+            <button onclick="filtrarCard(this, 'Em uso|Retirado|Devolução solicitada', 'Em uso')"
+                    class="card-filtro c-late bg-[#111827] border {{ $atrasados > 0 ? 'border-red-900/50' : 'border-[#1e293b]' }} rounded-xl px-4 py-3
+                           flex items-center gap-3 hover:border-red-700/60 transition-all text-left w-full">
+                <span class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center shrink-0">
+                    <i class="ph ph-book-open text-red-400 text-base"></i>
+                </span>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Em uso</p>
+                    <p class="text-xl font-black {{ $emUso > 0 ? 'text-red-400' : 'text-white' }} leading-tight font-serif">{{ $emUso }}</p>
                 </div>
             </button>
 
             <button onclick="filtrarCard(this, 'Atrasado', 'Empréstimos atrasados')"
-                    class="card-filtro c-late bg-[#111827] border {{ $atrasados > 0 ? 'border-red-900/50' : 'border-[#1e293b]' }} rounded-xl px-4 py-3
-                           flex items-center gap-3 hover:border-red-700/60 transition-all text-left w-full">
-                <span class="w-8 h-8 rounded-lg bg-red-900/30 flex items-center justify-center shrink-0">
-                    <i class="ph ph-warning-circle text-red-400 text-base"></i>
+                    class="card-filtro c-done bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
+                           flex items-center gap-3 hover:border-emerald-700/60 transition-all text-left w-full">
+                <span class="w-8 h-8 rounded-lg bg-emerald-900/30 flex items-center justify-center shrink-0">
+                    <i class="ph ph-warning-circle text-emerald-400 text-base"></i>
                 </span>
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Atrasados</p>
-                    <p class="text-xl font-black {{ $atrasados > 0 ? 'text-red-400' : 'text-white' }} leading-tight font-serif">{{ $atrasados }}</p>
+                    <p class="text-xl font-black {{ $atrasados > 0 ? 'text-emerald-400' : 'text-white' }} leading-tight font-serif">{{ $atrasados }}</p>
                 </div>
             </button>
 
-            <button onclick="filtrarCard(this, 'Concluído', 'Empréstimos concluídos')"
+            <button onclick="filtrarCard(this, 'Concluído|Encerrado', 'Empréstimos concluídos')"
                     class="card-filtro c-done bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
                            flex items-center gap-3 hover:border-emerald-700/60 transition-all text-left w-full">
                 <span class="w-8 h-8 rounded-lg bg-emerald-900/30 flex items-center justify-center shrink-0">
@@ -193,6 +266,18 @@
                 <div>
                     <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Concluídos</p>
                     <p class="text-xl font-black text-white leading-tight font-serif">{{ $concluidos }}</p>
+                </div>
+            </button>
+
+            <button onclick="filtrarCard(this, 'Rejeitado', 'Solicitações rejeitadas')"
+                    class="card-filtro c-late bg-[#111827] border border-[#1e293b] rounded-xl px-4 py-3
+                           flex items-center gap-3 hover:border-rose-700/60 transition-all text-left w-full">
+                <span class="w-8 h-8 rounded-lg bg-rose-900/30 flex items-center justify-center shrink-0">
+                    <i class="ph ph-x-circle text-rose-400 text-base"></i>
+                </span>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-500">Rejeitados</p>
+                    <p class="text-xl font-black text-white leading-tight font-serif">{{ $rejeitados }}</p>
                 </div>
             </button>
 
@@ -218,7 +303,7 @@
             </div>
 
             <div class="p-5">
-                <table id="tabelaEmprestimos" style="width:100%">
+                <table id="tabelaEmprestimos" data-has-rows="{{ $emprestimos->isNotEmpty() ? '1' : '0' }}" style="width:100%">
                     <thead>
                         <tr>
                             <th>Membro</th>
@@ -231,12 +316,18 @@
                     <tbody>
                         @forelse($emprestimos as $emprestimo)
                             @php
-                                $atrasado  = !$emprestimo->data_devolucao_real
-                                             && \Carbon\Carbon::today()->greaterThan($emprestimo->data_devolucao_prevista);
-                                $concluido = (bool) $emprestimo->data_devolucao_real;
-                                if ($concluido)    $statusLabel = 'Concluído';
-                                elseif ($atrasado) $statusLabel = 'Atrasado';
-                                else               $statusLabel = 'Ativo';
+                                $atrasado = $emprestimo->isAtrasado();
+                                $status = $emprestimo->status;
+                                $statusLabel = match ($status) {
+                                    \App\Models\Emprestimos::STATUS_SOLICITADO => 'Solicitado',
+                                    \App\Models\Emprestimos::STATUS_APROVADO => 'Aprovado',
+                                    \App\Models\Emprestimos::STATUS_RETIRADO => 'Retirado',
+                                    \App\Models\Emprestimos::STATUS_EM_USO => 'Em uso',
+                                    \App\Models\Emprestimos::STATUS_DEVOLUCAO_SOLICITADA => 'Devolução solicitada',
+                                    \App\Models\Emprestimos::STATUS_DEVOLVIDO => 'Concluído',
+                                    \App\Models\Emprestimos::STATUS_ENCERRADO => 'Encerrado',
+                                    default => '—',
+                                };
                             @endphp
                             <tr>
                                 <td>
@@ -263,39 +354,121 @@
                                 </td>
 
                                 <td class="text-center tabular-nums text-slate-400 text-xs">
-                                    {{ $emprestimo->data_devolucao_prevista->format('d/m/Y') }}
+                                    {{ $emprestimo->data_devolucao_prevista ? $emprestimo->data_devolucao_prevista->format('d/m/Y') : '—' }}
                                 </td>
 
                                 <td class="text-center">
-                                    @if($concluido)
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/40 text-emerald-400 border border-emerald-800/50">
-                                            <i class="ph ph-check"></i> Concluído
-                                        </span>
-                                    @elseif($atrasado)
+                                    @if($atrasado)
                                         <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-red-900/40 text-red-400 border border-red-800/50">
                                             <i class="ph ph-clock"></i> Atrasado
                                         </span>
-                                    @else
-                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-400 border border-blue-800/50">
-                                            <i class="ph ph-arrow-clockwise"></i> Ativo
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_SOLICITADO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-300 border border-blue-800/50">
+                                            <i class="ph ph-handshake"></i> Solicitado
                                         </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_APROVADO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-indigo-900/40 text-indigo-300 border border-indigo-800/50">
+                                            <i class="ph ph-check"></i> Aprovado
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_RETIRADO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-300 border border-amber-800/50">
+                                            <i class="ph ph-bag"></i> Retirado
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_EM_USO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-900/40 text-blue-400 border border-blue-800/50">
+                                            <i class="ph ph-book-open"></i> Em uso
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_DEVOLUCAO_SOLICITADA)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-900/40 text-amber-300 border border-amber-800/50">
+                                            <i class="ph ph-arrow-u-up-left"></i> Devolução solicitada
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_DEVOLVIDO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-900/40 text-emerald-400 border border-emerald-800/50">
+                                            <i class="ph ph-check"></i> Concluído
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_REJEITADO)
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-900/40 text-rose-400 border border-rose-800/50">
+                                            <i class="ph ph-x-circle"></i> Rejeitado
+                                        </span>
+                                    @else
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-900/60 text-slate-300 border border-slate-800/50">
+                                            <i class="ph ph-archive"></i> Encerrado
+                                        </span>
+                                    @endif
+                                    @if($status === \App\Models\Emprestimos::STATUS_REJEITADO && $emprestimo->rejected_reason)
+                                        <p class="mt-1 text-[10px] text-rose-300">{{ $emprestimo->rejected_reason }}</p>
                                     @endif
                                 </td>
 
                                 <td class="text-right">
-                                    @if(!$concluido)
+                                    @if($status === \App\Models\Emprestimos::STATUS_SOLICITADO)
+                                        <div class="inline-flex items-center gap-2">
+                                            <form action="{{ route('admin.emprestimos.aprovar', $emprestimo->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-[#1E3A8A] text-white border border-blue-800/80 hover:bg-blue-700 hover:border-blue-500 transition-all">
+                                                    <i class="ph ph-check"></i> Aprovar
+                                                </button>
+                                            </form>
+                                            <details class="group">
+                                                <summary class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-rose-900/40 text-rose-300 border border-rose-800/50 cursor-pointer">
+                                                    <i class="ph ph-x"></i> Rejeitar
+                                                </summary>
+                                                <form action="{{ route('admin.emprestimos.rejeitar', $emprestimo->id) }}" method="POST" class="mt-2">
+                                                    @csrf
+                                                    <input name="motivo" placeholder="Motivo (opcional)" class="w-52 bg-[#0f172a] border border-[#1e293b] text-slate-200 rounded-md px-2 py-1 text-[11px]" />
+                                                    <button type="submit" class="ml-2 text-[11px] uppercase tracking-wider text-rose-300 hover:text-rose-200">Confirmar</button>
+                                                </form>
+                                            </details>
+                                        </div>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_APROVADO)
+                                        <form action="{{ route('admin.emprestimos.retirar', $emprestimo->id) }}" method="POST" class="inline-flex items-center gap-2">
+                                            @csrf
+                                            <select name="prazo_dias" class="bg-[#0f172a] border border-[#1e293b] text-slate-200 rounded-md px-2 py-1 text-[11px]">
+                                                <option value="7">7d</option>
+                                                <option value="10">10d</option>
+                                                <option value="14">14d</option>
+                                                <option value="21">21d</option>
+                                            </select>
+                                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-amber-700 text-white border border-amber-600 hover:bg-amber-600 transition-all">
+                                                <i class="ph ph-bag"></i> Retirada
+                                            </button>
+                                        </form>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_RETIRADO)
+                                        <div class="inline-flex items-center gap-2">
+                                            <form action="{{ route('admin.emprestimos.iniciar-uso', $emprestimo->id) }}" method="POST">
+                                                @csrf
+                                                <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-blue-700 text-white border border-blue-600 hover:bg-blue-600 transition-all">
+                                                    <i class="ph ph-book-open"></i> Em uso
+                                                </button>
+                                            </form>
+                                            <form action="{{ route('admin.emprestimos.devolver', $emprestimo->id) }}" method="POST">
+                                                @csrf
+                                                <button type="button" onclick="confirmarDevolucao(event, this.closest('form'))" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-[#1E3A8A] text-white border border-blue-800/80 hover:bg-blue-700 hover:border-blue-500 transition-all">
+                                                    <i class="ph ph-arrow-u-up-left"></i> Receber
+                                                </button>
+                                            </form>
+                                        </div>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_EM_USO)
+                                        <span class="text-xs text-slate-400 font-semibold flex items-center justify-end gap-1">
+                                            <i class="ph ph-clock"></i> Aguardando devolução
+                                        </span>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_DEVOLUCAO_SOLICITADA)
                                         <form action="{{ route('admin.emprestimos.devolver', $emprestimo->id) }}" method="POST">
                                             @csrf
-                                            <button type="button"
-                                                    onclick="confirmarDevolucao(event, this.closest('form'))"
-                                                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg
-                                                           bg-[#1E3A8A] text-white border border-blue-800/80 hover:bg-blue-700 hover:border-blue-500 transition-all">
+                                            <button type="button" onclick="confirmarDevolucao(event, this.closest('form'))" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-[#1E3A8A] text-white border border-blue-800/80 hover:bg-blue-700 hover:border-blue-500 transition-all">
                                                 <i class="ph ph-arrow-u-up-left"></i> Receber
                                             </button>
                                         </form>
+                                    @elseif($status === \App\Models\Emprestimos::STATUS_DEVOLVIDO)
+                                        <form action="{{ route('admin.emprestimos.encerrar', $emprestimo->id) }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold uppercase tracking-wider rounded-lg bg-emerald-700 text-white border border-emerald-600 hover:bg-emerald-600 transition-all">
+                                                <i class="ph ph-archive"></i> Encerrar
+                                            </button>
+                                        </form>
                                     @else
-                                        <span class="text-xs text-emerald-500 font-semibold flex items-center justify-end gap-1">
-                                            <i class="ph ph-check-circle"></i> Devolvido
+                                        <span class="text-xs text-slate-400 font-semibold flex items-center justify-end gap-1">
+                                            <i class="ph ph-archive"></i> Encerrado
                                         </span>
                                     @endif
                                 </td>
@@ -318,6 +491,10 @@
         let tabela;
 
         $(document).ready(function () {
+            const hasRows = document.getElementById('tabelaEmprestimos')?.dataset.hasRows === '1';
+            if (!hasRows) {
+                return;
+            }
             tabela = $('#tabelaEmprestimos').DataTable({
                 language: {
                     search: "",
@@ -346,7 +523,8 @@
             btn.classList.add('ativo');
             document.getElementById('tituloFiltro').textContent = titulo;
             if (!tabela) return;
-            tabela.column(3).search(status === 'todos' ? '' : status, false, false).draw();
+            const useRegex = status.includes('|');
+            tabela.column(3).search(status === 'todos' ? '' : status, useRegex, false).draw();
         }
 
         function confirmarDevolucao(event, form) {
@@ -361,5 +539,8 @@
             }).then(r => { if (r.isConfirmed) form.submit(); });
         }
     </script>
+
+        </div>
+    </div>
 
 </x-app-layout>

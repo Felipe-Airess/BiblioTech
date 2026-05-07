@@ -114,9 +114,10 @@
                         </div>
 
                         <div class="sm:col-span-2">
-                            <label for="numero_carteirinha" placeholder="000.000-00" class="{{ $labelClasses }}">Número da Carteirinha</label>
-                            <input id="numero_carteirinha" type="text" name="numero_carteirinha" value="{{ old('numero_carteirinha') }}" required class="{{ $inputClasses }}">
-                            @error('numero_carteirinha') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
+                            <label class="{{ $labelClasses }}">Número da Carteirinha</label>
+                            <div class="w-full border border-dashed border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-lg px-4 py-3 text-sm font-semibold text-blue-700 dark:text-blue-300">
+                                Será gerada automaticamente ao salvar.
+                            </div>
                         </div>
 
                         <div>
@@ -158,11 +159,6 @@
                 IMask(telefoneInput, { mask: '(00) 00000-0000' });
             }
         });
-       
-    document.getElementById('numero_carteirinha').addEventListener('input', function (e) {
-        var x = e.target.value.replace(/\D/g, '').match(/(\d{0,3})(\d{0,3})(\d{0,2})/);
-        e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + (x[3] ? '-' + x[3] : '');
-    });
 
     </script>
 </body>

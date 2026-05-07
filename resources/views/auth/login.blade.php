@@ -83,13 +83,9 @@
                     </div>
 
                     <div class="flex gap-4">
-                        <button type="submit" class="w-1/2 py-3 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-md text-center">
+                        <button type="submit" class="w-full py-3 bg-blue-500 hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700 text-white font-bold rounded-lg transition-colors shadow-md text-center">
                             Acessar
                         </button>
-                        
-                        <a href="{{ route('membros.create') }}" class="w-1/2 py-3 bg-white dark:bg-gray-800 border border-blue-500 dark:border-blue-400 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-gray-700 font-bold rounded-lg transition-colors shadow-sm text-center flex items-center justify-center">
-                            Cadastrar
-                        </a>
                     </div>
                 </form>
             </div>

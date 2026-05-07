@@ -80,7 +80,7 @@
                                 <form action="{{ route('livros.alugar', $livro->id) }}" method="POST" class="w-full sm:w-auto flex-1">
                                     @csrf
                                     <button type="submit" class="w-full bg-white text-black hover:bg-gray-200 px-8 py-3.5 rounded-sm font-semibold text-sm transition-colors flex items-center justify-center gap-2">
-                                        Confirmar Empréstimo
+                                        Solicitar Empréstimo
                                     </button>
                                 </form>
                                 <div class="w-full sm:w-auto px-6 py-3.5 border border-gray-800 rounded-sm text-center">
@@ -101,6 +101,140 @@
                                 Fazer login para alugar
                             </a>
                         @endif
+                    </div>
+
+                    <div class="mt-10 border-t border-gray-800 pt-8">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+                            <div>
+                                <h3 class="text-sm font-semibold text-white">Comentários</h3>
+                                <p class="text-xs text-gray-500">
+                                    {{ $totalComentarios }} comentário{{ $totalComentarios === 1 ? '' : 's' }}
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 text-sm text-gray-400">
+                                <div class="flex items-center gap-1">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        <i class="ph {{ $mediaNota && $mediaNota >= $i ? 'ph-fill ph-star text-amber-400' : 'ph-star text-gray-600' }}"></i>
+                                    @endfor
+                                </div>
+                                <span>
+                                    {{ $mediaNota ? number_format($mediaNota, 1, ',', '.') : '0,0' }} / 5
+                                </span>
+                            </div>
+                        </div>
+
+                        @if(session('success'))
+                            <div class="mb-4 rounded-sm border border-emerald-500/30 bg-emerald-900/10 px-4 py-3 text-xs text-emerald-300">
+                                {{ session('success') }}
+                            </div>
+                        @endif
+
+                        @if($errors->any())
+                            <div class="mb-4 rounded-sm border border-red-500/30 bg-red-900/10 px-4 py-3 text-xs text-red-300">
+                                {{ $errors->first() }}
+                            </div>
+                        @endif
+
+                        @if(auth()->guard('membro')->check() || auth()->check())
+                            @if($comentarioExistente)
+                                <div class="mb-8 rounded-sm border border-amber-500/30 bg-amber-900/10 px-4 py-3 text-xs text-amber-300">
+                                    Voce ja comentou este livro. Edite seu comentario abaixo.
+                                </div>
+                            @elseif(!($podeComentar ?? false))
+                                <div class="mb-8 rounded-sm border border-gray-800 bg-[#1a1d24] px-4 py-3 text-xs text-gray-400">
+                                    Só é possível comentar livros que você já devolveu.
+                                </div>
+                            @else
+                                <form action="{{ route('livros.comentarios.store', $livro->id) }}" method="POST" class="mb-8">
+                                    @csrf
+                                    <div class="grid grid-cols-1 gap-4">
+                                        <div>
+                                            <label for="nota" class="block text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 mb-2">Nota</label>
+                                            <select id="nota" name="nota" class="w-full bg-[#1a1d24] border border-gray-800 text-gray-200 rounded-sm px-3 py-2 text-sm">
+                                                <option value="">Selecione</option>
+                                                <option value="5" @selected(old('nota') == 5)>5 - Excelente</option>
+                                                <option value="4" @selected(old('nota') == 4)>4 - Muito bom</option>
+                                                <option value="3" @selected(old('nota') == 3)>3 - Bom</option>
+                                                <option value="2" @selected(old('nota') == 2)>2 - Regular</option>
+                                                <option value="1" @selected(old('nota') == 1)>1 - Ruim</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="comentario" class="block text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 mb-2">Comentario</label>
+                                            <textarea id="comentario" name="comentario" rows="4" class="w-full bg-[#1a1d24] border border-gray-800 text-gray-200 rounded-sm px-3 py-2 text-sm" placeholder="Compartilhe sua opiniao...">{{ old('comentario') }}</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <button type="submit" class="bg-white text-black hover:bg-gray-200 px-6 py-2.5 rounded-sm font-semibold text-xs uppercase tracking-widest">Enviar comentario</button>
+                                    </div>
+                                </form>
+                            @endif
+                        @else
+                            <div class="mb-8 rounded-sm border border-gray-800 bg-[#1a1d24] px-4 py-3 text-xs text-gray-400">
+                                <a href="{{ route('login') }}" class="text-white hover:underline">Faca login</a> para comentar.
+                            </div>
+                        @endif
+
+                        <div class="space-y-4">
+                            @forelse($comentarios as $comentario)
+                                <div class="border border-gray-800 bg-[#0f1115] rounded-sm p-4">
+                                    <div class="flex items-center justify-between gap-3 mb-2">
+                                        <div class="text-sm text-gray-200 font-semibold">
+                                            {{ $comentario->membro->nome ?? $comentario->user->name ?? 'Leitor' }}
+                                        </div>
+                                        <div class="flex items-center gap-1 text-xs text-amber-400">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                <i class="ph {{ $comentario->nota >= $i ? 'ph-fill ph-star' : 'ph-star text-gray-600' }}"></i>
+                                            @endfor
+                                        </div>
+                                    </div>
+                                    <p class="text-sm text-gray-400 leading-relaxed">{{ $comentario->comentario }}</p>
+                                    <p class="mt-3 text-[10px] uppercase tracking-widest text-gray-600">
+                                        {{ $comentario->created_at->format('d/m/Y H:i') }}
+                                    </p>
+
+                                    @php
+                                        $isOwner = (auth()->guard('membro')->check() && auth()->guard('membro')->id() === $comentario->membro_id)
+                                            || (auth()->check() && auth()->id() === $comentario->user_id);
+                                    @endphp
+                                    @if($isOwner)
+                                        <details class="mt-4">
+                                            <summary class="text-[11px] uppercase tracking-widest text-amber-400 cursor-pointer">Editar</summary>
+                                            <form action="{{ route('livros.comentarios.update', [$livro->id, $comentario->id]) }}" method="POST" class="mt-3">
+                                                @csrf
+                                                @method('PUT')
+                                                <div class="grid grid-cols-1 gap-4">
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 mb-2" for="nota-{{ $comentario->id }}">Nota</label>
+                                                        <select id="nota-{{ $comentario->id }}" name="nota" class="w-full bg-[#1a1d24] border border-gray-800 text-gray-200 rounded-sm px-3 py-2 text-sm">
+                                                            <option value="5" @selected($comentario->nota == 5)>5 - Excelente</option>
+                                                            <option value="4" @selected($comentario->nota == 4)>4 - Muito bom</option>
+                                                            <option value="3" @selected($comentario->nota == 3)>3 - Bom</option>
+                                                            <option value="2" @selected($comentario->nota == 2)>2 - Regular</option>
+                                                            <option value="1" @selected($comentario->nota == 1)>1 - Ruim</option>
+                                                        </select>
+                                                    </div>
+                                                    <div>
+                                                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-gray-500 mb-2" for="comentario-{{ $comentario->id }}">Comentario</label>
+                                                        <textarea id="comentario-{{ $comentario->id }}" name="comentario" rows="4" class="w-full bg-[#1a1d24] border border-gray-800 text-gray-200 rounded-sm px-3 py-2 text-sm">{{ $comentario->comentario }}</textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="mt-4">
+                                                    <button type="submit" class="bg-white text-black hover:bg-gray-200 px-5 py-2 rounded-sm font-semibold text-[11px] uppercase tracking-widest">Salvar</button>
+                                                </div>
+                                            </form>
+                                            <form action="{{ route('livros.comentarios.destroy', [$livro->id, $comentario->id]) }}" method="POST" class="mt-3" onsubmit="return confirm('Excluir comentario?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="text-[11px] uppercase tracking-widest text-red-400 hover:text-red-300">Excluir</button>
+                                            </form>
+                                        </details>
+                                    @endif
+                                </div>
+                            @empty
+                                <div class="text-sm text-gray-500">Ainda nao ha comentarios.</div>
+                            @endforelse
+                        </div>
                     </div>
 
                 </div>

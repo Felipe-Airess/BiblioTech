@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use App\Models\Livros;
+use App\Models\Comentario;
 use App\Models\Autor;
 use App\Models\Emprestimos;
 use App\Models\Membros;
@@ -18,9 +20,21 @@ class LivroController extends Controller{
         $categorias = Livros::distinct()->pluck('categoria');
         $autores = Autor::withCount('livros')->latest()->get();
 
+        $categoriasMaisAcessadas = Emprestimos::join('livros', 'emprestimos.livro_id', '=', 'livros.id')
+            ->whereNotNull('livros.categoria')
+            ->select('livros.categoria', DB::raw('COUNT(*) as total'))
+            ->groupBy('livros.categoria')
+            ->orderByDesc('total')
+            ->limit(6)
+            ->get();
+
         $totalLivros = Livros::count();
         $totalMembros = Membros::count();
-        $emprestimosAtivos = Emprestimos::whereNull('data_devolucao_real')->count();
+        $emprestimosAtivos = Emprestimos::whereIn('status', [
+            Emprestimos::STATUS_APROVADO,
+            Emprestimos::STATUS_RETIRADO,
+            Emprestimos::STATUS_EM_USO,
+        ])->count();
         $devolucoesVencidas = Emprestimos::whereNull('data_devolucao_real')
             ->where('data_devolucao_prevista', '<', today())
             ->count();
@@ -29,7 +43,10 @@ class LivroController extends Controller{
         if (auth()->guard('membro')->check()) {
             $emprestimosDoMembro = Emprestimos::with('livro.autor')
                 ->where('membro_id', auth()->guard('membro')->id())
-                ->whereNull('data_devolucao_real')
+                ->whereIn('status', [
+                    Emprestimos::STATUS_RETIRADO,
+                    Emprestimos::STATUS_EM_USO,
+                ])
                 ->orderBy('data_devolucao_prevista')
                 ->get();
         }
@@ -42,6 +59,7 @@ class LivroController extends Controller{
             'livrosRecentes',
             'categorias',
             'autores',
+            'categoriasMaisAcessadas',
             'totalLivros',
             'totalMembros',
             'emprestimosAtivos',
@@ -209,8 +227,118 @@ class LivroController extends Controller{
         return redirect()->back()->with('sucesso', 'Livro atualizado com sucesso!');
     }
     public function show($id)
-{
-    $livro = Livros::findOrFail($id);
-    return view('livros.show', compact('livro'));
-}
+    {
+        $livro = Livros::with(['autor', 'comentarios.user', 'comentarios.membro'])->findOrFail($id);
+        $comentarios = $livro->comentarios->sortByDesc('created_at');
+        $mediaNota = $livro->comentarios->avg('nota');
+        $totalComentarios = $livro->comentarios->count();
+        $userId = auth()->id();
+        $membroId = auth()->guard('membro')->id();
+        $comentarioExistente = $livro->comentarioDe($userId, $membroId);
+
+        // Apenas permitir comentário se o membro já tiver devolvido este livro
+        $podeComentar = false;
+        if (auth()->guard('membro')->check()) {
+            $podeComentar = Emprestimos::where('livro_id', $livro->id)
+                ->where('membro_id', $membroId)
+                ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
+                ->exists();
+        }
+
+        return view('livros.show', compact('livro', 'comentarios', 'mediaNota', 'totalComentarios', 'comentarioExistente', 'podeComentar'));
+    }
+
+    public function storeComentario(Request $request, $id)
+    {
+        $request->validate([
+            'nota' => 'required|integer|min:1|max:5',
+            'comentario' => 'required|string|min:5|max:1000',
+        ]);
+
+        $livro = Livros::findOrFail($id);
+        $userId = auth()->id();
+        $membroId = auth()->guard('membro')->id();
+        $comentarioExistente = $livro->comentarioDe($userId, $membroId);
+
+        if ($comentarioExistente) {
+            return redirect()->back()->withErrors(['comentario' => 'Voce ja comentou este livro. Edite seu comentario existente.']);
+        }
+
+        // Verifica se o usuário/membro já devolveu este livro antes de permitir comentar
+        $podeComentar = false;
+        if (auth()->guard('membro')->check()) {
+            $podeComentar = Emprestimos::where('livro_id', $livro->id)
+                ->where('membro_id', $membroId)
+                ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
+                ->exists();
+        } elseif (auth()->check()) {
+            $podeComentar = Emprestimos::where('livro_id', $livro->id)
+                ->where('user_id', $userId)
+                ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
+                ->exists();
+        }
+
+        if (! $podeComentar) {
+            return redirect()->back()->withErrors(['comentario' => 'Só é possível comentar livros que você já devolveu.']);
+        }
+        $comentario = new Comentario();
+        $comentario->livro_id = $livro->id;
+        $comentario->nota = $request->nota;
+        $comentario->comentario = $request->comentario;
+
+        if (auth()->guard('membro')->check()) {
+            $comentario->membro_id = auth()->guard('membro')->id();
+        } elseif (auth()->check()) {
+            $comentario->user_id = auth()->id();
+        } else {
+            abort(403);
+        }
+
+        $comentario->save();
+
+        return redirect()->back()->with('success', 'Comentario enviado com sucesso.');
+    }
+
+    public function updateComentario(Request $request, $livroId, $comentarioId)
+    {
+        $request->validate([
+            'nota' => 'required|integer|min:1|max:5',
+            'comentario' => 'required|string|min:5|max:1000',
+        ]);
+
+        $comentario = Comentario::where('livro_id', $livroId)->findOrFail($comentarioId);
+        $userId = auth()->id();
+        $membroId = auth()->guard('membro')->id();
+
+        $isOwner = ($membroId && $comentario->membro_id === $membroId)
+            || ($userId && $comentario->user_id === $userId);
+
+        if (!$isOwner) {
+            abort(403);
+        }
+
+        $comentario->nota = $request->nota;
+        $comentario->comentario = $request->comentario;
+        $comentario->save();
+
+        return redirect()->back()->with('success', 'Comentario atualizado com sucesso.');
+    }
+
+    public function destroyComentario($livroId, $comentarioId)
+    {
+        $comentario = Comentario::where('livro_id', $livroId)->findOrFail($comentarioId);
+        $userId = auth()->id();
+        $membroId = auth()->guard('membro')->id();
+
+        $isOwner = ($membroId && $comentario->membro_id === $membroId)
+            || ($userId && $comentario->user_id === $userId);
+
+        if (!$isOwner) {
+            abort(403);
+        }
+
+        $comentario->delete();
+
+        return redirect()->back()->with('success', 'Comentario removido com sucesso.');
+    }
 }

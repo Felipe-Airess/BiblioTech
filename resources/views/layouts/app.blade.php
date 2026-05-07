@@ -92,9 +92,13 @@
                            class="relative w-64 h-full bg-[#080d14] border-r border-white/5 shadow-2xl z-50 flex flex-col">
 
                         <div class="flex items-center justify-between px-5 py-4 border-b border-white/5">
-                            <span class="font-black text-xl text-white tracking-tighter font-serif">
-                                Biblio<span class="text-[#F59E0B]">Tech</span>
-                            </span>
+                            <div class="flex flex-col items-center justify-center gap-1">
+                                <i class="ph ph-library text-blue-400 text-3xl"></i>
+                                <div class="text-[10px] font-black tracking-tighter text-center leading-tight">
+                                    <span class="text-white">BIBLIO</span><br>
+                                    <span class="text-[#F59E0B]">TECH</span>
+                                </div>
+                            </div>
                             <button @click="open = false" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 transition">
                                 <i class="ph ph-x"></i>
                             </button>
@@ -147,6 +151,18 @@
                                     <i class="ph ph-user-plus text-blue-400 text-base shrink-0"></i>
                                     Cadastrar Autor
                                 </a>
+                                <a href="{{ route('admin.membros.perfis') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('admin.membros.perfis') ? 'text-purple-400 bg-purple-900/10 border border-purple-400/40' : 'text-gray-400 hover:text-purple-400 hover:bg-purple-900/10' }}">
+                                    <i class="ph ph-users-three text-purple-400 text-base shrink-0"></i>
+                                    Perfil de Membros
+                                </a>
+                                <a href="{{ route('membros.create') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('membros.create') ? 'text-green-400 bg-green-900/10 border border-green-400/40' : 'text-gray-400 hover:text-green-400 hover:bg-green-900/10' }}">
+                                    <i class="ph ph-user-check text-green-400 text-base shrink-0"></i>
+                                    Cadastrar Membro
+                                </a>
                                 @endif
                                 @if(auth()->user()->tipo_usuario === 'gerente')
                                 <a href="{{ route('bibliotecarios.create') }}"
@@ -193,6 +209,59 @@
             </div>
         </div>
 
+        @php
+            $globalNotifiable = (Auth::guard('web')->check() ? Auth::guard('web')->user() : (Auth::guard('membro')->check() ? Auth::guard('membro')->user() : null));
+            $globalUnreadCount = $globalNotifiable ? $globalNotifiable->unreadNotifications()->count() : 0;
+        @endphp
+
+        @if($globalNotifiable && !request()->routeIs('dashboard'))
+            <div id="global-notifications-backdrop" class="fixed inset-0 bg-slate-950/60 opacity-0 pointer-events-none transition-opacity duration-200 z-50" aria-hidden="true"></div>
+            <aside id="global-notifications-sidebar" class="fixed top-0 right-[-420px] w-[380px] max-w-[90vw] h-screen bg-[#0d1420] border-l border-white/10 shadow-2xl transition-[right] duration-200 z-[60] flex flex-col" role="dialog" aria-modal="true" aria-label="Notificações">
+                <div class="p-5 border-b border-white/10 flex items-center justify-between">
+                    <div>
+                        <h3 class="text-sm font-black text-white uppercase tracking-widest">Notificações</h3>
+                        <p class="text-[11px] text-gray-400">Avisos do sistema</p>
+                    </div>
+                    <button type="button" id="global-notifications-close" class="w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition" aria-label="Fechar">
+                        <i class="ph ph-x text-sm"></i>
+                    </button>
+                </div>
+                <div class="p-4 overflow-y-auto flex-1 space-y-3">
+                    @php
+                        $globalUnreads = $globalNotifiable ? $globalNotifiable->unreadNotifications()->latest()->get() : collect();
+                        $globalReads = $globalNotifiable ? $globalNotifiable->readNotifications()->latest()->take(30)->get() : collect();
+                    @endphp
+
+                    @if($globalUnreads->isEmpty() && $globalReads->isEmpty())
+                        <div class="text-center py-6 text-gray-400 text-sm">Sem notificações por enquanto.</div>
+                    @endif
+
+                    @foreach($globalUnreads as $n)
+                        <div class="global-notification-unread p-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-700/20">
+                            <div class="flex items-start justify-between">
+                                <div class="text-sm text-white">{!! $n->data['message'] ?? ($n->data['title'] ?? 'Notificação') !!}</div>
+                                <div class="text-xs text-slate-400">{{ $n->created_at->diffForHumans() }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+
+                    @foreach($globalReads as $n)
+                        <div class="global-notification-read p-3 rounded-md bg-transparent border border-white/5 text-slate-400">
+                            <div class="flex items-start justify-between">
+                                <div class="text-sm">{!! $n->data['message'] ?? ($n->data['title'] ?? 'Notificação') !!}</div>
+                                <div class="text-xs">{{ $n->created_at->diffForHumans() }}</div>
+                            </div>
+                        </div>
+                    @endforeach
+                </div>
+                <div class="p-4 border-t border-white/10">
+                    <button id="global-mark-all-read" class="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-white/5 border border-white/10 text-gray-200 hover:text-white hover:bg-white/10 transition text-[11px] font-bold uppercase tracking-widest">
+                        Marcar todas como lidas
+                    </button>
+                </div>
+            </aside>
+        @endif
+
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -228,6 +297,47 @@
                 };
                 window.addEventListener('scroll', onScroll, { passive: true });
             }
+
+            const globalNotifToggle = document.getElementById('global-notifications-toggle');
+            const globalNotifSidebar = document.getElementById('global-notifications-sidebar');
+            const globalNotifBackdrop = document.getElementById('global-notifications-backdrop');
+            const globalNotifClose = document.getElementById('global-notifications-close');
+            const globalMarkAll = document.getElementById('global-mark-all-read');
+            const globalBadge = document.getElementById('global-notifications-badge');
+
+            function setGlobalNotificationsOpen(isOpen) {
+                if (!globalNotifSidebar || !globalNotifBackdrop || !globalNotifToggle) return;
+                globalNotifSidebar.classList.toggle('right-0', isOpen);
+                globalNotifSidebar.classList.toggle('right-[-420px]', !isOpen);
+                globalNotifBackdrop.classList.toggle('opacity-100', isOpen);
+                globalNotifBackdrop.classList.toggle('pointer-events-auto', isOpen);
+                globalNotifBackdrop.classList.toggle('pointer-events-none', !isOpen);
+                document.body.classList.toggle('overflow-hidden', isOpen);
+            }
+
+            globalNotifToggle?.addEventListener('click', () => setGlobalNotificationsOpen(true));
+            globalNotifClose?.addEventListener('click', () => setGlobalNotificationsOpen(false));
+            globalNotifBackdrop?.addEventListener('click', () => setGlobalNotificationsOpen(false));
+
+            if (globalBadge && typeof Swal !== 'undefined') {
+                Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3000,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({icon:'info',title:'Você tem notificações novas'});
+            }
+
+            globalMarkAll?.addEventListener('click', function () {
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                fetch('/notifications/mark-read', { method: 'POST', headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json' } })
+                    .then(r => r.json())
+                    .then(() => {
+                        setGlobalNotificationsOpen(false);
+                        globalBadge?.remove();
+                        document.querySelectorAll('.global-notification-unread').forEach(el => {
+                            el.className = 'global-notification-read p-3 rounded-md bg-transparent border border-white/5 text-slate-400';
+                        });
+                        if (typeof Swal !== 'undefined') {
+                            Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:2500,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({icon:'success',title:'Notificações marcadas como lidas'});
+                        }
+                    });
+            });
         </script>
     </body>
 </html>

@@ -16,6 +16,20 @@ export default {
                 sans: ['Inter', ...defaultTheme.fontFamily.sans],
                 serif: ['Merriweather', ...defaultTheme.fontFamily.serif],
             },
+            keyframes: {
+                'brand-swap-a': {
+                    '0%, 100%': { color: '#1E3A8A' },
+                    '50%': { color: '#F59E0B' },
+                },
+                'brand-swap-b': {
+                    '0%, 100%': { color: '#F59E0B' },
+                    '50%': { color: '#1E3A8A' },
+                },
+            },
+            animation: {
+                'brand-swap-a': 'brand-swap-a 6s ease-in-out infinite',
+                'brand-swap-b': 'brand-swap-b 6s ease-in-out infinite',
+            },
         },
     },
 

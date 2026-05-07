@@ -71,4 +71,9 @@ class Membros extends Authenticatable
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    public function comentarios()
+    {
+        return $this->hasMany(Comentario::class, 'membro_id');
+    }
+
 }

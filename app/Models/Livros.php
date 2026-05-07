@@ -54,4 +54,29 @@ class Livros extends Model
     {
         return $this->belongsTo(Autor::class);
     }
+
+    public function comentarios()
+    {
+        return $this->hasMany(Comentario::class, 'livro_id');
+    }
+
+    public function comentarioDe($userId, $membroId)
+    {
+        return $this->comentarios()
+            ->where(function ($q) use ($userId, $membroId) {
+                if ($userId) {
+                    $q->where('user_id', $userId);
+                }
+
+                if ($membroId) {
+                    // If user_id was added, keep OR for membro_id, otherwise simple where
+                    if ($userId) {
+                        $q->orWhere('membro_id', $membroId);
+                    } else {
+                        $q->where('membro_id', $membroId);
+                    }
+                }
+            })
+            ->first();
+    }
 }

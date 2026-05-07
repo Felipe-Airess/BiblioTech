@@ -1,13 +1,68 @@
-<x-guest-layout>
-    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<x-app-layout>
+    <x-slot name="header">
+        <div class="flex items-center justify-between w-full gap-4">
+            <div class="flex items-center gap-3">
+                <a href="{{ route('dashboard') }}" class="flex flex-col items-center justify-center gap-1 shrink-0">
+                    <i class="ph ph-library text-[#1E3A8A] dark:text-blue-400 text-4xl"></i>
+                    <div class="text-[11px] font-black tracking-tight text-center leading-tight">
+                        <span class="text-[#1E3A8A] dark:text-blue-400">BIBLIO</span><br>
+                        <span class="text-[#F59E0B]">TECH</span>
+                    </div>
+                </a>
+                <div>
+                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-0.5">Admin</p>
+                    <h1 class="text-lg font-black text-slate-900 dark:text-white">Editar Livro</h1>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="dark = !dark" class="w-9 h-9 rounded-md bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition">
+                    <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
+                </button>
+                <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E3A8A] to-blue-700 flex items-center justify-center ring-1 ring-blue-500/30 shrink-0">
+                    <span class="text-white text-[10px] font-black tracking-tight select-none">{{ auth()->user()->nome ? collect(explode(' ', auth()->user()->nome))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('') : 'AD' }}</span>
+                </div>
+            </div>
+        </div>
+    </x-slot>
+
+    <style>
+        .bg-shelf { background: linear-gradient(90deg, transparent, rgba(147,197,253,.07) 20%, rgba(147,197,253,.07) 80%, transparent); }
+        .bg-icon  { color: rgba(147,197,253,.07); pointer-events: none; user-select: none; }
+        #bg-glow-1 { background: radial-gradient(circle, rgba(30,58,138,.3) 0%, transparent 70%); }
+        #bg-glow-2 { background: radial-gradient(circle, rgba(245,158,11,.15) 0%, transparent 70%); }
+    </style>
+
+    <div class="-mx-4 px-4 py-10 bg-slate-50 dark:bg-[#0f172a] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 min-h-screen relative">
+
+        {{-- ══ DECORATIVE BACKGROUND ══ --}}
+        <div class="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
+            <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <pattern id="bg-dots-livros-edit" width="28" height="28" patternUnits="userSpaceOnUse">
+                        <circle cx="1" cy="1" r="1" fill="#93c5fd" opacity="0.08"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#bg-dots-livros-edit)"/>
+            </svg>
+            <div id="bg-glow-1" class="absolute -top-28 -left-20 w-96 h-96 rounded-full blur-[90px]"></div>
+            <div id="bg-glow-2" class="absolute -bottom-20 -right-14 w-72 h-72 rounded-full blur-[80px]"></div>
+            <div class="bg-shelf absolute left-0 right-0 h-px top-[22%]"></div>
+            <div class="bg-shelf absolute left-0 right-0 h-px top-[58%]"></div>
+            <i class="ph ph-book-bookmark bg-icon absolute left-[3%] top-[5%] text-[28px]"></i>
+            <i class="ph ph-pencil bg-icon absolute left-[87%] top-[8%] text-[22px]"></i>
+            <i class="ph ph-book bg-icon absolute left-[14%] top-[58%] text-[34px]"></i>
+        </div>
+
+        <div class="max-w-6xl mx-auto relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
         
         <div class="lg:col-span-7 flex flex-col justify-center">
             
-            <div class="mb-8 border-b border-gray-700 pb-4">
-                <h2 class="text-3xl text-white tracking-tight uppercase font-black" style="font-family: 'Merriweather', serif;">
+            <div class="mb-8 border-b border-slate-200 dark:border-gray-700 pb-4">
+                <h2 class="text-3xl text-slate-900 dark:text-white tracking-tight uppercase font-black" style="font-family: 'Merriweather', serif;">
                     Editar <span class="text-[#F59E0B]">Livro</span>
                 </h2>
-                <p class="text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">{{ $livro->titulo }}</p>
+                <p class="text-slate-600 dark:text-gray-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-1">{{ $livro->titulo }}</p>
             </div>
 
             @if(session('sucesso'))
@@ -22,16 +77,16 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="group">
-                        <label for="titulo" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Título do Livro</label>
+                        <label for="titulo" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Título do Livro</label>
                         <input id="titulo" type="text" name="titulo" value="{{ old('titulo', $livro->titulo) }}" required autofocus
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                         <x-input-error :messages="$errors->get('titulo')" class="mt-2" />
                     </div>
 
                     <div class="group">
-                        <label for="autor_id" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Autor da Obra</label>
+                        <label for="autor_id" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Autor da Obra</label>
                         <select id="autor_id" name="autor_id" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500">
                             <option value="">Selecione um autor</option>
                             @foreach($autores as $autor)
                                 <option value="{{ $autor->id }}" {{ old('autor_id', $livro->autor_id) == $autor->id ? 'selected' : '' }}>{{ $autor->nome }}</option>
@@ -43,9 +98,9 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div class="group">
-                        <label for="categoria" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Categoria</label>
+                        <label for="categoria" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Categoria</label>
                         <select id="categoria" name="categoria" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500">
                             <option value="">Selecione uma categoria</option>
                             @foreach(\App\Models\Livros::CATEGORIAS as $cat)
                                 <option value="{{ $cat }}" {{ old('categoria', $livro->categoria) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
@@ -54,67 +109,67 @@
                     </div>
                     
                     <div class="group">
-                        <label for="quantidade" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Estoque</label>
+                        <label for="quantidade" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Estoque</label>
                         <input id="quantidade" type="number" name="quantidade" min="0" value="{{ old('quantidade', $livro->quantidade) }}" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
 
                     <div class="group">
-                        <label for="data_publicacao" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Lançamento</label>
+                        <label for="data_publicacao" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Lançamento</label>
                         <input id="data_publicacao" type="date" name="data_publicacao" value="{{ old('data_publicacao', $livro->data_publicacao ? (is_string($livro->data_publicacao) ? $livro->data_publicacao : $livro->data_publicacao->format('Y-m-d')) : '') }}" required
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-end">
                     <div class="md:col-span-2 group">
-                        <label for="isbn" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">ISBN</label>
+                        <label for="isbn" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">ISBN</label>
                         <input id="isbn" type="text" name="isbn" value="{{ old('isbn', $livro->isbn) }}" required placeholder="000-00-000-0000-0"
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
 
-                    <div class="flex items-center bg-gray-900 p-3 border border-gray-700 rounded-md h-[42px] hover:border-gray-500 transition-colors">
+                    <div class="flex items-center bg-white dark:bg-gray-900 p-3 border border-slate-200 dark:border-gray-700 rounded-md h-[42px] hover:border-slate-300 dark:hover:border-gray-500 transition-colors">
                         <input id="e_bestseller" type="checkbox" name="e_bestseller" value="1" {{ old('e_bestseller', $livro->e_bestseller) ? 'checked' : '' }}
-                            class="border-gray-600 bg-gray-800 text-[#F59E0B] shadow-sm focus:ring-[#F59E0B] rounded-sm transition-all duration-300 cursor-pointer">
-                        <label for="e_bestseller" class="ms-2 text-xs font-bold uppercase tracking-wider text-gray-300 cursor-pointer">Bestseller?</label>
+                            class="border-slate-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-[#F59E0B] shadow-sm focus:ring-[#F59E0B] rounded-sm transition-all duration-300 cursor-pointer">
+                        <label for="e_bestseller" class="ms-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-gray-300 cursor-pointer">Bestseller?</label>
                     </div>
                 </div>
 
                 <div class="group">
-                    <label for="sinopse" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Sinopse</label>
+                    <label for="sinopse" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Sinopse</label>
                     <textarea id="sinopse" name="sinopse" rows="4" 
-                        class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">{{ old('sinopse', $livro->sinopse) }}</textarea>
+                        class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500">{{ old('sinopse', $livro->sinopse) }}</textarea>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="group">
-                        <label for="editora" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Editora</label>
+                        <label for="editora" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Editora</label>
                         <input id="editora" type="text" name="editora" value="{{ old('editora', $livro->editora) }}"
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
 
                     <div class="group">
-                        <label for="paginas" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Número de Páginas</label>
+                        <label for="paginas" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Número de Páginas</label>
                         <input id="paginas" type="number" name="paginas" min="1" value="{{ old('paginas', $livro->paginas) }}"
-                            class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500" />
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
                 </div>
 
                 <div class="group">
-                    <label for="preview" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Prévia das Páginas</label>
+                    <label for="preview" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Prévia das Páginas</label>
                     <textarea id="preview" name="preview" rows="6" placeholder="Insira um trecho do livro para prévia..."
-                        class="block w-full bg-gray-900 border border-gray-700 text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-gray-500">{{ old('preview', $livro->preview) }}</textarea>
+                        class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500">{{ old('preview', $livro->preview) }}</textarea>
                 </div>
 
-                <div class="bg-gray-900/50 p-4 border border-dashed border-gray-600 rounded-md hover:border-[#F59E0B] transition-colors duration-300">
-                    <label for="capa" class="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-3">Trocar Capa (Opcional)</label>
+                <div class="bg-slate-100 dark:bg-gray-900/50 p-4 border border-dashed border-slate-300 dark:border-gray-600 rounded-md hover:border-[#F59E0B] transition-colors duration-300">
+                    <label for="capa" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-3">Trocar Capa (Opcional)</label>
                     <input id="capa" type="file" name="capa" accept="image/*" 
-                        class="block w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:uppercase file:bg-[#1E3A8A] file:text-white hover:file:bg-[#2563EB] cursor-pointer rounded-md transition-colors" />
+                        class="block w-full text-sm text-slate-600 dark:text-gray-400 file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-bold file:uppercase file:bg-[#1E3A8A] file:text-white hover:file:bg-[#2563EB] cursor-pointer rounded-md transition-colors" />
                 </div>
 
-                <div class="flex flex-col sm:flex-row items-center justify-end gap-4 pt-6 border-t border-gray-700">
+                <div class="flex flex-col sm:flex-row items-center justify-end gap-4 pt-6 border-t border-slate-200 dark:border-gray-700">
                     <a href="{{ route('dashboard') }}" 
-                       class="w-full sm:w-auto text-center px-6 py-3 bg-gray-700 hover:bg-gray-600 border border-gray-600 font-bold text-xs text-white uppercase tracking-wider shadow-sm rounded-md transition-all duration-300">
+                       class="w-full sm:w-auto text-center px-6 py-3 bg-slate-200 hover:bg-slate-300 dark:bg-gray-700 dark:hover:bg-gray-600 border border-slate-300 dark:border-gray-600 font-bold text-xs text-slate-900 dark:text-white uppercase tracking-wider shadow-sm rounded-md transition-all duration-300">
                         Cancelar
                     </a>
 
@@ -128,13 +183,13 @@
 
         <div class="lg:col-span-5 flex flex-col justify-center">
             <div class="sticky top-6">
-                <label class="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-4 border-b border-gray-700 pb-2">Pré-visualização da Edição</label>
+                <label class="block text-xs font-bold text-slate-600 dark:text-gray-500 uppercase tracking-wider mb-4 border-b border-slate-200 dark:border-gray-700 pb-2">Pré-visualização da Edição</label>
                 
-                <div class="bg-gray-900 border border-gray-700 shadow-xl rounded-md overflow-hidden flex flex-col max-w-sm mx-auto h-[480px] transition-all duration-500 hover:shadow-2xl hover:border-gray-500 hover:-translate-y-2">
+                <div class="bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 shadow-xl rounded-md overflow-hidden flex flex-col max-w-sm mx-auto h-[480px] transition-all duration-500 hover:shadow-2xl hover:border-slate-300 dark:hover:border-gray-500 hover:-translate-y-2">
                     
-                    <div class="relative w-full h-56 bg-gray-800 border-b border-gray-700 flex items-center justify-center overflow-hidden group">
+                    <div class="relative w-full h-56 bg-slate-100 dark:bg-gray-800 border-b border-slate-200 dark:border-gray-700 flex items-center justify-center overflow-hidden group">
                         
-                        <span id="prev-placeholder" class="text-gray-500 text-xs font-bold uppercase tracking-widest flex flex-col items-center transition-all duration-300 {{ $livro->capa ? 'hidden' : '' }}">
+                        <span id="prev-placeholder" class="text-slate-500 dark:text-gray-500 text-xs font-bold uppercase tracking-widest flex flex-col items-center transition-all duration-300 {{ $livro->capa ? 'hidden' : '' }}">
                             <svg class="w-8 h-8 mb-2 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                             Sem Capa
                         </span>
@@ -243,4 +298,8 @@
             }
         });
     </script>
-</x-guest-layout>
+            </div>
+        </div>
+    </div>
+
+</x-app-layout>

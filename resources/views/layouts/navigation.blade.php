@@ -7,22 +7,34 @@
         $ehMembro = Auth::guard('membro')->check();
         $ehAdmin  = Auth::guard('web')->check() && 
                     in_array(Auth::guard('web')->user()->tipo_usuario ?? '', ['gerente', 'bibliotecario']);
+        $globalNotifiable = $authUser;
+        $globalUnreadCount = $globalNotifiable ? $globalNotifiable->unreadNotifications()->count() : 0;
     @endphp
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}" class="hover:opacity-80 transition flex items-center gap-1">
-                        <span class="font-black text-2xl text-[#1E3A8A] dark:text-blue-400 tracking-tighter font-serif">Biblio</span>
-                        <span class="font-black text-2xl text-[#F59E0B] tracking-tighter font-serif">Tech</span>
+                    <a href="{{ route('dashboard') }}" class="hover:opacity-80 transition flex flex-col items-center justify-center gap-1">
+                        <i class="ph ph-library text-[#1E3A8A] dark:text-blue-400 text-4xl"></i>
+                        <div class="text-[11px] font-black tracking-tighter text-center leading-tight">
+                            <span class="text-[#1E3A8A] dark:text-blue-400">BIBLIO</span><br>
+                            <span class="text-[#F59E0B]">TECH</span>
+                        </div>
                     </a>
                 </div>
             </div>
 
 
             <div class="hidden sm:flex sm:items-center sm:ms-6 gap-4">
-                {{-- Nenhum botão de menu lateral admin aqui, apenas menu universal --}}
+                @if($globalNotifiable && !request()->routeIs('dashboard'))
+                    <button type="button" id="global-notifications-toggle" class="relative inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition" aria-controls="global-notifications-sidebar" aria-label="Notificações">
+                        <i class="ph ph-bell text-sm"></i>
+                        @if($globalUnreadCount)
+                            <span id="global-notifications-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-red-600 rounded-full">{{ $globalUnreadCount > 9 ? '9+' : $globalUnreadCount }}</span>
+                        @endif
+                    </button>
+                @endif
 
                 {{-- Dropdown do usuário --}}
                 <x-dropdown align="right" width="48">

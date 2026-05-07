@@ -9,6 +9,8 @@ use App\Models\Membros; // Precisamos importar o model do Membro!
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Notifications\DevolucaoSolicitada;
+use App\Notifications\EmprestimoSolicitado;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -47,15 +49,15 @@ class EmprestimoController extends Controller
         // 3.1. Checa se já existe empréstimo ativo deste livro para o membro
         $jaTem = Emprestimos::where('membro_id', $membro->id)
             ->where('livro_id', $livro->id)
-            ->whereNull('data_devolucao_real')
+            ->whereIn('status', Emprestimos::STATUS_ATIVOS)
             ->exists();
         if ($jaTem) {
-            return redirect()->back()->with('erro', 'Você já está com este livro emprestado. Devolva antes de pegar novamente.');
+            return redirect()->back()->with('erro', 'Você já tem uma solicitação ou empréstimo ativo deste livro.');
         }
 
         // 3.2. Limite de empréstimos ativos
         $ativos = Emprestimos::where('membro_id', $membro->id)
-            ->whereNull('data_devolucao_real')
+            ->whereIn('status', Emprestimos::STATUS_ATIVOS)
             ->count();
         if ($ativos >= 3) {
             return redirect()->back()->with('erro', 'Você atingiu o limite de 3 empréstimos ativos. Devolva algum livro para pegar outro.');
@@ -63,7 +65,7 @@ class EmprestimoController extends Controller
 
         // 3.3. Bloqueio por pendências (empréstimos vencidos ou multas)
         $temVencido = Emprestimos::where('membro_id', $membro->id)
-            ->whereNull('data_devolucao_real')
+            ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
             ->where('data_devolucao_prevista', '<', Carbon::today())
             ->exists();
         if ($temVencido) {
@@ -77,19 +79,26 @@ class EmprestimoController extends Controller
         }
 
         // 5. Cria o registro usando os nomes exatos da sua migration
-        Emprestimos::create([
+        $emprestimo = Emprestimos::create([
             'membro_id' => $membro->id,
             'livro_id' => $livro->id,
-            'data_emprestimo' => Carbon::today(), // Pega a data de hoje
-            'data_devolucao_prevista' => Carbon::today()->addDays(7), // Regra dos 7 dias
-            'data_devolucao_real' => null, // Fica nulo até ele devolver
+            'status' => Emprestimos::STATUS_SOLICITADO,
+            'data_emprestimo' => null,
+            'data_devolucao_prevista' => null,
+            'data_devolucao_real' => null,
             'valor_multa' => 0, // Começa sem multa
         ]);
 
-        // 6. Diminui o estoque do livro (O Laravel tem essa função pronta que é maravilhosa!)
-        $livro->decrement('quantidade');
+        $emprestimo->load('livro');
 
-        return redirect()->back()->with('sucesso', 'Livro alugado com sucesso! A devolução está prevista para daqui a 7 dias.');
+        // Notifica os administradores (gerente e bibliotecario) sobre o novo pedido
+        User::whereIn('tipo_usuario', ['gerente', 'bibliotecario'])
+            ->get()
+            ->each(function (User $admin) use ($emprestimo) {
+                $admin->notify(new EmprestimoSolicitado($emprestimo));
+            });
+
+        return redirect()->back()->with('sucesso', 'Solicitação enviada! Aguarde a aprovação do bibliotecário.');
     }
     public function historico()
     {
@@ -97,10 +106,37 @@ class EmprestimoController extends Controller
 
         $emprestimos = Emprestimos::with('livro.autor')
             ->where('membro_id', $membro->id)
-            ->orderByRaw('data_devolucao_real IS NULL DESC') // ativos primeiro
+            ->orderByRaw("FIELD(status, 'solicitado','aprovado','retirado','em_uso','devolucao_solicitada','devolvido','encerrado','rejeitado')")
             ->orderBy('data_devolucao_prevista', 'asc')
             ->get();
 
         return view('membros.historico', compact('emprestimos'));
+    }
+
+    public function solicitarDevolucao($id)
+    {
+        $membro = auth()->guard('membro')->user();
+
+        $emprestimo = Emprestimos::where('id', $id)
+            ->where('membro_id', $membro->id)
+            ->firstOrFail();
+
+        if (!in_array($emprestimo->status, [Emprestimos::STATUS_RETIRADO, Emprestimos::STATUS_EM_USO], true)) {
+            return redirect()->back()->with('erro', 'Este empréstimo não pode solicitar devolução agora.');
+        }
+
+        $emprestimo->update([
+            'status' => Emprestimos::STATUS_DEVOLUCAO_SOLICITADA,
+            'return_requested_at' => Carbon::now(),
+        ]);
+
+        // Notifica os administradores (gerente e bibliotecario) sobre a solicitação
+        User::whereIn('tipo_usuario', ['gerente', 'bibliotecario'])
+            ->get()
+            ->each(function (User $admin) use ($emprestimo) {
+                $admin->notify(new DevolucaoSolicitada($emprestimo));
+            });
+
+        return redirect()->back()->with('sucesso', 'Solicitação de devolução enviada.');
     }
 }
