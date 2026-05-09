@@ -94,10 +94,10 @@
                                 <a href="{{ route('autores.edit', $autor->id) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-600/10 border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-600/20 text-[11px] font-bold uppercase tracking-widest transition">
                                     <i class="ph ph-pencil text-sm"></i> Editar
                                 </a>
-                                <form method="POST" action="{{ route('autores.destroy', $autor->id) }}" class="inline">
+                                <form method="POST" action="{{ route('autores.destroy', $autor->id) }}" class="inline" data-confirm="delete" data-title="Excluir autor?" data-text="Esta ação não pode ser desfeita.">
                                     @csrf
                                     @method('DELETE')
-                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600/10 border border-red-600/30 text-red-700 dark:text-red-400 hover:bg-red-600/20 text-[11px] font-bold uppercase tracking-widest transition" onclick="return confirm('Tem certeza que deseja excluir este autor?')">
+                                    <button type="submit" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-red-600/10 border border-red-600/30 text-red-700 dark:text-red-400 hover:bg-red-600/20 text-[11px] font-bold uppercase tracking-widest transition">
                                         <i class="ph ph-trash text-sm"></i> Excluir
                                     </button>
                                 </form>

@@ -13,6 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         @keyframes fadeIn {
@@ -35,6 +36,57 @@
         </div>
         
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Swal === 'undefined') return;
+
+            const toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 5000,
+                timerProgressBar: true,
+                background: '#0d1420',
+                color: '#fff'
+            });
+
+            const applyFieldError = (fieldName) => {
+                const safeName = String(fieldName).replace(/"/g, '\\"');
+                const selector = `[name="${safeName}"], [name="${safeName}[]"]`;
+                const field = document.querySelector(selector);
+                if (!field) return;
+
+                field.setAttribute('aria-invalid', 'true');
+                field.style.borderColor = '#ef4444';
+                field.style.boxShadow = '0 0 0 1px #ef4444';
+            };
+
+            const errors = {!! json_encode($errors->getMessages()) !!};
+            Object.entries(errors).forEach(([field, messages]) => {
+                applyFieldError(field);
+                (messages || []).forEach((message) => toast.fire({ icon: 'error', title: message }));
+            });
+
+            @if(session('sucesso'))
+                toast.fire({ icon: 'success', title: {!! json_encode(session('sucesso')) !!} });
+            @endif
+
+            @if(session('error'))
+                toast.fire({ icon: 'error', title: {!! json_encode(session('error')) !!} });
+            @endif
+
+            @if(session('status'))
+                toast.fire({ icon: 'info', title: {!! json_encode(session('status')) !!} });
+            @endif
+
+            @if($errors->any())
+                @foreach($errors->all() as $error)
+                    toast.fire({ icon: 'error', title: {!! json_encode($error) !!} });
+                @endforeach
+            @endif
+        });
+    </script>
 </body>
 
 </html>

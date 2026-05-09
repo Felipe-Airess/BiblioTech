@@ -27,6 +27,10 @@ return new class extends Migration
 
     private function hasAutorForeignKey(): bool
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return true;
+        }
+
         $database = DB::getDatabaseName();
 
         $constraint = DB::table('information_schema.table_constraints')

@@ -25,7 +25,7 @@ class AutorController extends Controller
             'nome' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'biografia' => 'nullable|string',
-            'data_nascimento' => 'nullable|date',
+            'data_nascimento' => 'nullable|date_format:Y-m-d',
             'nacionalidade' => 'nullable|string|max:255',
         ]);
 
@@ -42,7 +42,7 @@ class AutorController extends Controller
 
     public function show($id)
     {
-        $autor = Autor::findOrFail($id);
+        $autor = Autor::with(['livros' => fn ($query) => $query->latest()])->findOrFail($id);
         return view('autores.show', compact('autor'));
     }
 
@@ -60,7 +60,7 @@ class AutorController extends Controller
             'nome' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'biografia' => 'nullable|string',
-            'data_nascimento' => 'nullable|date',
+            'data_nascimento' => 'nullable|date_format:Y-m-d',
             'nacionalidade' => 'nullable|string|max:255',
         ]);
 

@@ -21,9 +21,9 @@ class EmprestimoVencendo extends Notification
         $prazo = $this->emprestimo->data_devolucao_prevista->format('d/m/Y');
 
         return (new MailMessage)
-            ->subject('⏰ Lembrete BiblioTech — Devolução amanhã!')
+            ->subject('Lembrete BiblioTech - Devolução em 2 dias')
             ->greeting("Olá, {$notifiable->nome}!")
-            ->line("O prazo de devolução do livro **{$livro->titulo}** é **amanhã ({$prazo})**.")
+            ->line("O prazo de devolução do livro **{$livro->titulo}** vence em 2 dias ({$prazo}).")
             ->line('Evite multas devolvendo o livro na biblioteca até o fim do dia.')
             ->action('Ver meus empréstimos', route('emprestimos.historico'))
             ->line('Obrigado por usar o BiblioTech!')

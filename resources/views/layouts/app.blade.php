@@ -80,7 +80,7 @@
                      x-transition:leave-end="opacity-0"
                      class="fixed inset-0 z-40 flex">
 
-                    <div @click="open = false" class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+                    <div @click="open = false" class="absolute inset-0 bg-slate-950/40 backdrop-blur-sm dark:bg-black/60"></div>
 
                     <aside x-show="open"
                            x-transition:enter="transition ease-out duration-200"
@@ -89,103 +89,154 @@
                            x-transition:leave="transition ease-in duration-150"
                            x-transition:leave-start="translate-x-0"
                            x-transition:leave-end="-translate-x-full"
-                           class="relative w-64 h-full bg-[#080d14] border-r border-white/5 shadow-2xl z-50 flex flex-col">
+                           class="relative w-64 h-full bg-white border-r border-slate-200 shadow-2xl z-50 flex flex-col dark:bg-[#080d14] dark:border-white/5">
 
-                        <div class="flex items-center justify-between px-5 py-4 border-b border-white/5">
+                        <div class="flex items-center justify-between px-5 py-4 border-b border-slate-200 dark:border-white/5">
                             <div class="flex flex-col items-center justify-center gap-1">
-                                <i class="ph ph-library text-blue-400 text-3xl"></i>
+                                <i class="ph ph-library text-[#1E3A8A] text-3xl dark:text-blue-400"></i>
                                 <div class="text-[10px] font-black tracking-tighter text-center leading-tight">
-                                    <span class="text-white">BIBLIO</span><br>
+                                    <span class="text-[#1E3A8A] dark:text-white">BIBLIO</span><br>
                                     <span class="text-[#F59E0B]">TECH</span>
                                 </div>
                             </div>
-                            <button @click="open = false" class="w-8 h-8 rounded-lg flex items-center justify-center text-gray-500 hover:text-white hover:bg-white/5 transition">
+                            <button @click="open = false" class="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 hover:text-slate-950 hover:bg-slate-100 transition dark:text-gray-500 dark:hover:text-white dark:hover:bg-white/5">
                                 <i class="ph ph-x"></i>
                             </button>
                         </div>
 
+                        @php
+                            $webUser = auth()->guard('web')->user();
+                            $memberUser = auth()->guard('membro')->user();
+                            $drawerUser = $memberUser ?: $webUser;
+                            $isDrawerMember = (bool) $memberUser;
+                            $isDrawerAdmin = $webUser && in_array($webUser->tipo_usuario ?? null, ['gerente', 'bibliotecario'], true);
+                            $isDrawerManager = $webUser && ($webUser->tipo_usuario ?? null) === 'gerente';
+                        @endphp
+
                         <nav class="flex flex-col gap-0.5 p-3 flex-1 overflow-y-auto">
                             <a href="{{ route('dashboard') }}"
                                class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold
-                                      {{ request()->routeIs('dashboard') ? 'text-white bg-[#1E3A8A]/40 border border-[#1E3A8A]/50' : 'text-gray-400 hover:text-white hover:bg-white/5 border border-transparent' }}">
+                                      {{ request()->routeIs('dashboard') ? 'text-[#1E3A8A] bg-blue-50 border border-blue-200 dark:text-white dark:bg-[#1E3A8A]/40 dark:border-[#1E3A8A]/50' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 border border-transparent dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
                                 <i class="ph-fill ph-squares-four text-blue-400 text-base shrink-0"></i>
                                 Acervo
                             </a>
 
-                            @auth
-                                @if(auth()->user()->tipo_usuario === 'membro')
+                            @if($drawerUser)
+                                @if($isDrawerMember)
+                                <div class="my-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1 dark:text-slate-600">Leitor</p>
+                                </div>
+                                <a href="{{ route('membros.biblioteca') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('membros.biblioteca') ? 'text-blue-800 bg-blue-50 border border-blue-200 dark:text-white dark:bg-blue-900/30 dark:border-blue-400/40' : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/10' }}">
+                                    <i class="ph ph-books text-blue-500 text-base shrink-0"></i>
+                                    Minha biblioteca
+                                </a>
                                 <a href="{{ route('emprestimos.historico') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('emprestimos.historico') ? 'text-white bg-[#F59E0B]/20 border border-[#F59E0B]/40' : 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                                          {{ request()->routeIs('emprestimos.historico') ? 'text-amber-800 bg-amber-50 border border-amber-200 dark:text-white dark:bg-[#F59E0B]/20 dark:border-[#F59E0B]/40' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
                                     <i class="ph ph-clock-countdown text-amber-500/70 text-base shrink-0"></i>
                                     Meus Empréstimos
                                 </a>
+                                <a href="{{ route('favoritos.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('favoritos.index') ? 'text-amber-800 bg-amber-50 border border-amber-200 dark:text-white dark:bg-amber-500/20 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/10' }}">
+                                    <i class="ph ph-heart text-amber-500 text-base shrink-0"></i>
+                                    Favoritos
+                                </a>
+                                <a href="{{ route('membros.carteirinha') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('membros.carteirinha') ? 'text-emerald-800 bg-emerald-50 border border-emerald-200 dark:text-white dark:bg-emerald-500/20 dark:border-emerald-400/40' : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-gray-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/10' }}">
+                                    <i class="ph ph-identification-card text-emerald-500 text-base shrink-0"></i>
+                                    Carteirinha
+                                </a>
+                                <a href="{{ route('notifications.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('notifications.index') ? 'text-blue-800 bg-blue-50 border border-blue-200 dark:text-white dark:bg-blue-900/30 dark:border-blue-400/40' : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-300 dark:hover:bg-blue-900/10' }}">
+                                    <i class="ph ph-bell text-blue-500 text-base shrink-0"></i>
+                                    Notificações
+                                </a>
                                 @endif
 
+                                <div class="my-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1 dark:text-slate-600">Conta</p>
+                                </div>
                                 <a href="{{ route('profile.edit') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('profile.edit') ? 'text-white bg-blue-900/30 border border-blue-400/40' : 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                                          {{ request()->routeIs('profile.edit') ? 'text-blue-800 bg-blue-50 border border-blue-200 dark:text-white dark:bg-blue-900/30 dark:border-blue-400/40' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
                                     <i class="ph ph-user text-slate-500 text-base shrink-0"></i>
                                     Meu Perfil
                                 </a>
 
-                                @if(in_array(auth()->user()->tipo_usuario, ['gerente', 'bibliotecario']))
-                                <div class="my-2 pt-2 border-t border-white/5">
-                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-600 mb-1">Admin</p>
+                                @if($isDrawerAdmin)
+                                <div class="my-2 pt-2 border-t border-slate-200 dark:border-white/5">
+                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1 dark:text-slate-600">Admin</p>
                                 </div>
                                 <a href="{{ route('admin.emprestimos.index') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('admin.emprestimos.index') ? 'text-amber-400 bg-amber-900/10 border border-amber-400/40' : 'text-gray-400 hover:text-amber-400 hover:bg-amber-900/10' }}">
+                                          {{ request()->routeIs('admin.emprestimos.index') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
                                     <i class="ph ph-handshake text-amber-500/60 text-base shrink-0"></i>
                                     Painel de Empréstimos
                                 </a>
                                 <a href="{{ route('livros.create') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('livros.create') ? 'text-blue-400 bg-blue-900/10 border border-blue-400/40' : 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/10' }}">
+                                          {{ request()->routeIs('livros.create') ? 'text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-900/10 dark:border-blue-400/40' : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/10' }}">
                                     <i class="ph ph-book-bookmark text-blue-400 text-base shrink-0"></i>
                                     Cadastrar Livro
                                 </a>
                                 <a href="{{ route('autores.create') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('autores.create') ? 'text-blue-400 bg-blue-900/10 border border-blue-400/40' : 'text-gray-400 hover:text-blue-400 hover:bg-blue-900/10' }}">
+                                          {{ request()->routeIs('autores.create') ? 'text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-900/10 dark:border-blue-400/40' : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/10' }}">
                                     <i class="ph ph-user-plus text-blue-400 text-base shrink-0"></i>
                                     Cadastrar Autor
                                 </a>
+                                <a href="{{ route('categorias.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('categorias.*') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
+                                    <i class="ph ph-tag text-amber-500/70 text-base shrink-0"></i>
+                                    Categorias
+                                </a>
                                 <a href="{{ route('admin.membros.perfis') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('admin.membros.perfis') ? 'text-purple-400 bg-purple-900/10 border border-purple-400/40' : 'text-gray-400 hover:text-purple-400 hover:bg-purple-900/10' }}">
+                                          {{ request()->routeIs('admin.membros.perfis') ? 'text-purple-700 bg-purple-50 border border-purple-200 dark:text-purple-400 dark:bg-purple-900/10 dark:border-purple-400/40' : 'text-slate-600 hover:text-purple-700 hover:bg-purple-50 dark:text-gray-400 dark:hover:text-purple-400 dark:hover:bg-purple-900/10' }}">
                                     <i class="ph ph-users-three text-purple-400 text-base shrink-0"></i>
                                     Perfil de Membros
                                 </a>
+                                <a href="{{ route('admin.relatorios.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('admin.relatorios.index') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
+                                    <i class="ph ph-chart-bar text-amber-500/70 text-base shrink-0"></i>
+                                    Relatórios
+                                </a>
                                 <a href="{{ route('membros.create') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('membros.create') ? 'text-green-400 bg-green-900/10 border border-green-400/40' : 'text-gray-400 hover:text-green-400 hover:bg-green-900/10' }}">
+                                          {{ request()->routeIs('membros.create') ? 'text-green-700 bg-green-50 border border-green-200 dark:text-green-400 dark:bg-green-900/10 dark:border-green-400/40' : 'text-slate-600 hover:text-green-700 hover:bg-green-50 dark:text-gray-400 dark:hover:text-green-400 dark:hover:bg-green-900/10' }}">
                                     <i class="ph ph-user-check text-green-400 text-base shrink-0"></i>
                                     Cadastrar Membro
                                 </a>
                                 @endif
-                                @if(auth()->user()->tipo_usuario === 'gerente')
-                                <a href="{{ route('bibliotecarios.create') }}"
+                                @if($isDrawerManager)
+                                <a href="{{ route('bibliotecarios.index') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('bibliotecarios.create') ? 'text-amber-400 bg-amber-900/10 border border-amber-400/40' : 'text-gray-400 hover:text-amber-400 hover:bg-amber-900/10' }}">
+                                          {{ request()->routeIs('bibliotecarios.*') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
                                     <i class="ph ph-user-gear text-amber-500/60 text-base shrink-0"></i>
-                                    Adicionar Bibliotecário
+                                    Bibliotecários
                                 </a>
                                 @endif
                                 <form method="POST" action="{{ route('logout') }}" class="mt-8">
                                     @csrf
-                                    <button type="submit" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-red-400 hover:text-white hover:bg-red-900/20 transition w-full">
+                                    <button type="submit" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-red-600 hover:text-red-700 hover:bg-red-50 transition w-full dark:text-red-400 dark:hover:text-white dark:hover:bg-red-900/20">
                                         <i class="ph ph-sign-out"></i> Sair
                                     </button>
                                 </form>
                             @else
                                 <a href="{{ route('login') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
-                                          {{ request()->routeIs('login') ? 'text-white bg-blue-900/30 border border-blue-400/40' : 'text-gray-400 hover:text-white hover:bg-white/5' }}">
+                                          {{ request()->routeIs('login') ? 'text-blue-800 bg-blue-50 border border-blue-200 dark:text-white dark:bg-blue-900/30 dark:border-blue-400/40' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
                                     <i class="ph ph-sign-in text-slate-500 text-base shrink-0"></i>
                                     Entrar
                                 </a>
-                            @endauth
+                            @endif
                         </nav>
                     </aside>
                 </div>
@@ -215,14 +266,14 @@
         @endphp
 
         @if($globalNotifiable && !request()->routeIs('dashboard'))
-            <div id="global-notifications-backdrop" class="fixed inset-0 bg-slate-950/60 opacity-0 pointer-events-none transition-opacity duration-200 z-50" aria-hidden="true"></div>
-            <aside id="global-notifications-sidebar" class="fixed top-0 right-[-420px] w-[380px] max-w-[90vw] h-screen bg-[#0d1420] border-l border-white/10 shadow-2xl transition-[right] duration-200 z-[60] flex flex-col" role="dialog" aria-modal="true" aria-label="Notificações">
-                <div class="p-5 border-b border-white/10 flex items-center justify-between">
+            <div id="global-notifications-backdrop" class="fixed inset-0 bg-slate-950/40 opacity-0 pointer-events-none transition-opacity duration-200 z-50 dark:bg-slate-950/60" aria-hidden="true"></div>
+            <aside id="global-notifications-sidebar" class="fixed top-0 right-[-420px] w-[380px] max-w-[90vw] h-screen bg-white border-l border-slate-200 shadow-2xl transition-[right] duration-200 z-[60] flex flex-col dark:bg-[#0d1420] dark:border-white/10" role="dialog" aria-modal="true" aria-label="Notificações">
+                <div class="p-5 border-b border-slate-200 flex items-center justify-between dark:border-white/10">
                     <div>
-                        <h3 class="text-sm font-black text-white uppercase tracking-widest">Notificações</h3>
-                        <p class="text-[11px] text-gray-400">Avisos do sistema</p>
+                        <h3 class="text-sm font-black text-slate-950 uppercase tracking-widest dark:text-white">Notificações</h3>
+                        <p class="text-[11px] text-slate-500 dark:text-gray-400">Avisos do sistema</p>
                     </div>
-                    <button type="button" id="global-notifications-close" class="w-9 h-9 rounded-lg bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 transition" aria-label="Fechar">
+                    <button type="button" id="global-notifications-close" class="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition dark:bg-white/5 dark:border-white/10 dark:text-gray-300 dark:hover:text-white dark:hover:bg-white/10" aria-label="Fechar">
                         <i class="ph ph-x text-sm"></i>
                     </button>
                 </div>
@@ -233,20 +284,20 @@
                     @endphp
 
                     @if($globalUnreads->isEmpty() && $globalReads->isEmpty())
-                        <div class="text-center py-6 text-gray-400 text-sm">Sem notificações por enquanto.</div>
+                        <div class="text-center py-6 text-slate-500 text-sm dark:text-gray-400">Sem notificações por enquanto.</div>
                     @endif
 
                     @foreach($globalUnreads as $n)
-                        <div class="global-notification-unread p-3 rounded-md bg-slate-50 dark:bg-white/5 border border-slate-700/20">
+                        <div class="global-notification-unread p-3 rounded-md bg-blue-50 border border-blue-100 dark:bg-white/5 dark:border-white/10">
                             <div class="flex items-start justify-between">
-                                <div class="text-sm text-white">{!! $n->data['message'] ?? ($n->data['title'] ?? 'Notificação') !!}</div>
-                                <div class="text-xs text-slate-400">{{ $n->created_at->diffForHumans() }}</div>
+                                <div class="text-sm text-slate-900 dark:text-white">{!! $n->data['message'] ?? ($n->data['title'] ?? 'Notificação') !!}</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">{{ $n->created_at->diffForHumans() }}</div>
                             </div>
                         </div>
                     @endforeach
 
                     @foreach($globalReads as $n)
-                        <div class="global-notification-read p-3 rounded-md bg-transparent border border-white/5 text-slate-400">
+                        <div class="global-notification-read p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-500 dark:bg-transparent dark:border-white/5 dark:text-slate-400">
                             <div class="flex items-start justify-between">
                                 <div class="text-sm">{!! $n->data['message'] ?? ($n->data['title'] ?? 'Notificação') !!}</div>
                                 <div class="text-xs">{{ $n->created_at->diffForHumans() }}</div>
@@ -254,8 +305,11 @@
                         </div>
                     @endforeach
                 </div>
-                <div class="p-4 border-t border-white/10">
-                    <button id="global-mark-all-read" class="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-white/5 border border-white/10 text-gray-200 hover:text-white hover:bg-white/10 transition text-[11px] font-bold uppercase tracking-widest">
+                <div class="space-y-2 p-4 border-t border-slate-200 dark:border-white/10">
+                    <a href="{{ route('notifications.index') }}" class="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 hover:bg-blue-100 transition text-[11px] font-bold uppercase tracking-widest dark:bg-blue-500/10 dark:border-blue-500/30 dark:text-blue-300 dark:hover:bg-blue-500/20">
+                        Ver central
+                    </a>
+                    <button id="global-mark-all-read" class="w-full inline-flex items-center justify-center gap-2 h-10 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 hover:text-slate-950 hover:bg-slate-100 transition text-[11px] font-bold uppercase tracking-widest dark:bg-white/5 dark:border-white/10 dark:text-gray-200 dark:hover:text-white dark:hover:bg-white/10">
                         Marcar todas como lidas
                     </button>
                 </div>
@@ -331,13 +385,84 @@
                         setGlobalNotificationsOpen(false);
                         globalBadge?.remove();
                         document.querySelectorAll('.global-notification-unread').forEach(el => {
-                            el.className = 'global-notification-read p-3 rounded-md bg-transparent border border-white/5 text-slate-400';
+                            el.className = 'global-notification-read p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-500 dark:bg-transparent dark:border-white/5 dark:text-slate-400';
                         });
                         if (typeof Swal !== 'undefined') {
                             Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:2500,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({icon:'success',title:'Notificações marcadas como lidas'});
                         }
                     });
             });
+
+            // Toasts de validação + marcação vermelha dos campos com erro
+            (function () {
+                if (typeof Swal === 'undefined') return;
+
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true,
+                    background: '#0d1420',
+                    color: '#fff'
+                });
+
+                const applyFieldError = (fieldName) => {
+                    const safeName = String(fieldName).replace(/"/g, '\\"');
+                    const selector = `[name="${safeName}"], [name="${safeName}[]"]`;
+                    const field = document.querySelector(selector);
+                    if (!field) return;
+
+                    field.setAttribute('aria-invalid', 'true');
+                    field.style.borderColor = '#ef4444';
+                    field.style.boxShadow = '0 0 0 1px #ef4444';
+                };
+
+                const errors = {!! json_encode($errors->getMessages()) !!};
+                Object.entries(errors).forEach(([field, messages]) => {
+                    applyFieldError(field);
+                    (messages || []).forEach((message) => toast.fire({ icon: 'error', title: message }));
+                });
+
+                @if(session('sucesso'))
+                    toast.fire({ icon: 'success', title: {!! json_encode(session('sucesso')) !!} });
+                @endif
+                @if(session('error'))
+                    toast.fire({ icon: 'error', title: {!! json_encode(session('error')) !!} });
+                @endif
+                @if(session('erro'))
+                    toast.fire({ icon: 'error', title: {!! json_encode(session('erro')) !!} });
+                @endif
+                @if(session('status'))
+                    toast.fire({ icon: 'info', title: {!! json_encode(session('status')) !!} });
+                @endif
+            })();
+
+            document.querySelectorAll('form[data-confirm]').forEach((form) => {
+                form.addEventListener('submit', (event) => {
+                    event.preventDefault();
+                    const isDelete = form.dataset.confirm === 'delete';
+
+                    darkSwal.fire({
+                        title: form.dataset.title || 'Confirmar ação?',
+                        text: form.dataset.text || 'Deseja continuar?',
+                        icon: isDelete ? 'warning' : 'question',
+                        showCancelButton: true,
+                        confirmButtonText: isDelete ? 'EXCLUIR' : 'CONFIRMAR',
+                        cancelButtonText: 'CANCELAR',
+                        customClass: {
+                            popup: 'bg-[#111827] text-white border border-gray-800 rounded-md shadow-xl',
+                            confirmButton: `px-6 py-2 mx-2 ${isDelete ? 'bg-red-500 hover:bg-red-600' : 'bg-[#1E3A8A] hover:bg-blue-800'} text-white rounded-md font-bold uppercase text-xs tracking-widest transition-colors`,
+                            cancelButton: 'px-6 py-2 mx-2 bg-[#1e293b] border border-gray-700 hover:bg-gray-800 text-white rounded-md font-bold uppercase text-xs tracking-widest transition-colors'
+                        },
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            form.submit();
+                        }
+                    });
+                });
+            });
+
         </script>
     </body>
 </html>

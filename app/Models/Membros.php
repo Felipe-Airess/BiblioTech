@@ -76,4 +76,25 @@ class Membros extends Authenticatable
         return $this->hasMany(Comentario::class, 'membro_id');
     }
 
+    public function emprestimos()
+    {
+        return $this->hasMany(Emprestimos::class, 'membro_id');
+    }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'membro_id');
+    }
+
+    public function favoritos()
+    {
+        return $this->hasMany(Favorito::class, 'membro_id');
+    }
+
+    public function livrosFavoritos()
+    {
+        return $this->belongsToMany(Livros::class, 'favoritos', 'membro_id', 'livro_id')
+            ->withTimestamps();
+    }
+
 }

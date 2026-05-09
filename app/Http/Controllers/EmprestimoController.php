@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Models\Livros;
 use App\Models\Emprestimos;
 use App\Models\Membros; // Precisamos importar o model do Membro!
+use App\Models\Reserva;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
@@ -71,7 +72,10 @@ class EmprestimoController extends Controller
         if ($temVencido) {
             return redirect()->back()->with('erro', 'Você possui empréstimos vencidos. Regularize sua situação para pegar novos livros.');
         }
-        // Aqui você pode adicionar lógica para checar multas, se houver campo/flag para isso
+
+        if (Emprestimos::possuiMultaPendente($membro->id)) {
+            return redirect()->back()->with('erro', 'Você possui multas pendentes. Regularize sua situação para pegar novos livros.');
+        }
 
         // 4. Verifica o estoque
         if ($livro->quantidade <= 0) {
@@ -100,6 +104,87 @@ class EmprestimoController extends Controller
 
         return redirect()->back()->with('sucesso', 'Solicitação enviada! Aguarde a aprovação do bibliotecário.');
     }
+
+    public function reservar($id)
+    {
+        $livro = Livros::findOrFail($id);
+
+        if (!auth()->guard('membro')->check()) {
+            return redirect()->route('login')->with('erro', 'Você precisa estar logado como membro para reservar livros.');
+        }
+
+        $membro = auth()->guard('membro')->user();
+
+        if ($livro->quantidade > 0) {
+            return redirect()->back()->with('erro', 'Este livro está disponível. Você já pode solicitar o empréstimo.');
+        }
+
+        $jaTemEmprestimo = Emprestimos::where('membro_id', $membro->id)
+            ->where('livro_id', $livro->id)
+            ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+            ->exists();
+
+        if ($jaTemEmprestimo) {
+            return redirect()->back()->with('erro', 'Você já tem uma solicitação ou empréstimo ativo deste livro.');
+        }
+
+        $jaReservou = Reserva::ativas()
+            ->where('membro_id', $membro->id)
+            ->where('livro_id', $livro->id)
+            ->exists();
+
+        if ($jaReservou) {
+            return redirect()->back()->with('erro', 'Você já está na fila de reserva deste livro.');
+        }
+
+        $ativos = Emprestimos::where('membro_id', $membro->id)
+            ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+            ->count();
+
+        if ($ativos >= 3) {
+            return redirect()->back()->with('erro', 'Você atingiu o limite de 3 empréstimos ativos. Devolva algum livro para reservar outro.');
+        }
+
+        $temVencido = Emprestimos::where('membro_id', $membro->id)
+            ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
+            ->where('data_devolucao_prevista', '<', Carbon::today())
+            ->exists();
+
+        if ($temVencido || Emprestimos::possuiMultaPendente($membro->id)) {
+            return redirect()->back()->with('erro', 'Regularize empréstimos vencidos ou multas antes de entrar na fila.');
+        }
+
+        Reserva::create([
+            'membro_id' => $membro->id,
+            'livro_id' => $livro->id,
+            'status' => Reserva::STATUS_ATIVA,
+        ]);
+
+        $posicao = Reserva::ativas()
+            ->where('livro_id', $livro->id)
+            ->where('created_at', '<=', now())
+            ->count();
+
+        return redirect()->back()->with('sucesso', "Reserva registrada. Você entrou na posição {$posicao} da fila.");
+    }
+
+    public function cancelarReserva($id)
+    {
+        $membro = auth()->guard('membro')->user();
+
+        $reserva = Reserva::ativas()
+            ->where('id', $id)
+            ->where('membro_id', $membro->id)
+            ->firstOrFail();
+
+        $reserva->update([
+            'status' => Reserva::STATUS_CANCELADA,
+            'cancelada_em' => now(),
+        ]);
+
+        return redirect()->back()->with('sucesso', 'Reserva cancelada com sucesso.');
+    }
+
     public function historico()
     {
         $membro = auth()->guard('membro')->user();
@@ -110,7 +195,22 @@ class EmprestimoController extends Controller
             ->orderBy('data_devolucao_prevista', 'asc')
             ->get();
 
-        return view('membros.historico', compact('emprestimos'));
+        $reservas = Reserva::with('livro.autor')
+            ->where('membro_id', $membro->id)
+            ->latest()
+            ->get()
+            ->map(function (Reserva $reserva) {
+                if ($reserva->status === Reserva::STATUS_ATIVA) {
+                    $reserva->posicao_fila = Reserva::ativas()
+                        ->where('livro_id', $reserva->livro_id)
+                        ->where('created_at', '<=', $reserva->created_at)
+                        ->count();
+                }
+
+                return $reserva;
+            });
+
+        return view('membros.historico', compact('emprestimos', 'reservas'));
     }
 
     public function solicitarDevolucao($id)
@@ -138,5 +238,44 @@ class EmprestimoController extends Controller
             });
 
         return redirect()->back()->with('sucesso', 'Solicitação de devolução enviada.');
+    }
+
+    public function renovar($id)
+    {
+        $membro = auth()->guard('membro')->user();
+
+        $emprestimo = Emprestimos::with('livro')
+            ->where('id', $id)
+            ->where('membro_id', $membro->id)
+            ->firstOrFail();
+
+        if (!$emprestimo->podeRenovar()) {
+            return redirect()->back()->with('erro', 'Este empréstimo não pode ser renovado agora.');
+        }
+
+        if (Emprestimos::possuiMultaPendente($membro->id)) {
+            return redirect()->back()->with('erro', 'Você possui multas pendentes. Regularize sua situação para renovar empréstimos.');
+        }
+
+        $temReservaNaFila = Reserva::ativas()
+            ->where('livro_id', $emprestimo->livro_id)
+            ->exists();
+
+        if ($temReservaNaFila) {
+            return redirect()->back()->with('erro', 'Este livro possui reservas em fila, então não pode ser renovado.');
+        }
+
+        $prazoDias = Emprestimos::prazoDiasParaLivro($emprestimo->livro);
+        $base = $emprestimo->data_devolucao_prevista->isFuture()
+            ? $emprestimo->data_devolucao_prevista->copy()
+            : Carbon::today();
+
+        $emprestimo->update([
+            'data_devolucao_prevista' => $base->addDays($prazoDias),
+            'renovacoes_count' => ((int) $emprestimo->renovacoes_count) + 1,
+            'ultima_renovacao_em' => now(),
+        ]);
+
+        return redirect()->back()->with('sucesso', "Empréstimo renovado por mais {$prazoDias} dias.");
     }
 }

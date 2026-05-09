@@ -35,6 +35,8 @@ class Livros extends Model
         'capa',
         'categoria',       
         'quantidade',      
+        'estante',
+        'localizacao',
         'data_publicacao', 
         'sinopse',
         'editora',
@@ -58,6 +60,16 @@ class Livros extends Model
     public function comentarios()
     {
         return $this->hasMany(Comentario::class, 'livro_id');
+    }
+
+    public function reservas()
+    {
+        return $this->hasMany(Reserva::class, 'livro_id');
+    }
+
+    public function favoritos()
+    {
+        return $this->hasMany(Favorito::class, 'livro_id');
     }
 
     public function comentarioDe($userId, $membroId)

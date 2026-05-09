@@ -1,10 +1,9 @@
 <section class="space-y-6">
     <header>
-        <h2 class="text-lg font-medium text-gray-900 dark:text-gray-100">
-            Excluir Conta
-        </h2>
+        <p class="text-[10px] font-black uppercase tracking-[.18em] text-red-700 dark:text-red-300">Zona de risco</p>
+        <h2 class="mt-1 text-xl font-black text-red-900 dark:text-red-100 font-serif">Excluir conta</h2>
 
-        <p class="mt-1 text-sm text-gray-600 dark:text-gray-400">
+        <p class="mt-2 text-sm text-red-800/80 dark:text-red-100/70">
             Uma vez que sua conta for excluída, todos os seus recursos e dados serão permanentemente excluídos. Antes de excluir sua conta, baixe quaisquer dados ou informações que deseja manter.
         </p>
     </header>

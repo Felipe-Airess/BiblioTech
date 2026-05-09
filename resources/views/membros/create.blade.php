@@ -17,8 +17,8 @@
         
         <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-500 to-blue-900 dark:from-gray-800 dark:to-blue-900 flex-col justify-center items-center p-12 text-white transition-colors duration-200 sticky top-0 h-screen">
             
-            <a href="/" class="absolute top-8 left-8 text-sm font-semibold flex items-center gap-2 hover:text-blue-200 transition">
-                <span>&lsaquo;</span> Voltar para o Login
+            <a href="{{ route('dashboard') }}" class="absolute top-8 left-8 text-sm font-semibold flex items-center gap-2 hover:text-blue-200 transition">
+                <span>&lsaquo;</span> Voltar para o Dashboard
             </a>
 
             <div class="text-center">
@@ -56,7 +56,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('membros.store') }}">
+                <form method="POST" action="{{ route('membros.store') }}" novalidate>
                     @csrf
 
                     @php
@@ -69,37 +69,31 @@
                         <div class="sm:col-span-2">
                             <label for="nome" class="{{ $labelClasses }}">Nome Completo</label>
                             <input id="nome" type="text" name="nome" value="{{ old('nome') }}" required autofocus class="{{ $inputClasses }}">
-                            @error('nome') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
                             <label for="email" class="{{ $labelClasses }}">E-mail</label>
                             <input id="email" type="email" name="email" value="{{ old('email') }}" required class="{{ $inputClasses }}">
-                            @error('email') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="cpf" class="{{ $labelClasses }}">CPF</label>
                             <input id="cpf" type="text" name="cpf" value="{{ old('cpf') }}" required class="{{ $inputClasses }}">
-                            @error('cpf') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="telefone" class="{{ $labelClasses }}">Telefone</label>
                             <input id="telefone" type="text" name="telefone" value="{{ old('telefone') }}" required class="{{ $inputClasses }}">
-                            @error('telefone') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
                             <label for="endereco" class="{{ $labelClasses }}">Endereço Completo</label>
                             <input id="endereco" type="text" name="endereco" value="{{ old('endereco') }}" required class="{{ $inputClasses }}">
-                            @error('endereco') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
                             <label for="data_nascimento" class="{{ $labelClasses }}">Data de Nascimento</label>
                             <input id="data_nascimento" type="date" name="data_nascimento" value="{{ old('data_nascimento') }}" required class="{{ $inputClasses }}">
-                            @error('data_nascimento') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -110,7 +104,6 @@
                                 <option value="professor" {{ old('tipo_membro') == 'professor' ? 'selected' : '' }}>Professor</option>
                                 <option value="comum" {{ old('tipo_membro') == 'comum' ? 'selected' : '' }}>Comum</option>
                             </select>
-                            @error('tipo_membro') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="sm:col-span-2">
@@ -123,7 +116,6 @@
                         <div>
                             <label for="password" class="{{ $labelClasses }}">Senha</label>
                             <input id="password" type="password" name="password" required class="{{ $inputClasses }}">
-                            @error('password') <p class="text-sm text-red-500 mt-1">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
@@ -137,8 +129,8 @@
                             Concluir Cadastro
                         </button>
                         
-                        <a href="/" class="w-full sm:w-1/3 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-bold rounded-lg transition-colors shadow-sm text-center flex items-center justify-center">
-                            Cancelar
+                        <a href="{{ route('dashboard') }}" class="w-full sm:w-1/3 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-bold rounded-lg transition-colors shadow-sm text-center flex items-center justify-center">
+                            Voltar para o Dashboard
                         </a>
                     </div>
                 </form>
@@ -146,17 +138,95 @@
         </div>
     </div>
 
-    <script src="https://unpkg.com/imask"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            if (typeof Swal !== 'undefined') {
+                const toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 5000,
+                    timerProgressBar: true,
+                    background: '#0d1420',
+                    color: '#fff'
+                });
+
+                const applyFieldError = (fieldName) => {
+                    const safeName = String(fieldName).replace(/"/g, '\\"');
+                    const selector = `[name="${safeName}"], [name="${safeName}[]"]`;
+                    const field = document.querySelector(selector);
+                    if (!field) return;
+
+                    field.setAttribute('aria-invalid', 'true');
+                    field.style.borderColor = '#ef4444';
+                    field.style.boxShadow = '0 0 0 1px #ef4444';
+                };
+
+                const errors = {!! json_encode($errors->getMessages()) !!};
+                Object.entries(errors).forEach(([field, messages]) => {
+                    applyFieldError(field);
+                    (messages || []).forEach((message) => toast.fire({ icon: 'error', title: message }));
+                });
+
+                @if(session('sucesso'))
+                    toast.fire({ icon: 'success', title: {!! json_encode(session('sucesso')) !!} });
+                @endif
+
+                @if(session('error'))
+                    toast.fire({ icon: 'error', title: {!! json_encode(session('error')) !!} });
+                @endif
+
+                @if($errors->any())
+                    @foreach($errors->all() as $error)
+                        toast.fire({ icon: 'error', title: {!! json_encode($error) !!} });
+                    @endforeach
+                @endif
+            }
+
             const cpfInput = document.getElementById('cpf');
             if (cpfInput) {
-                IMask(cpfInput, { mask: '000.000.000-00' });
+                cpfInput.addEventListener('input', () => {
+                    const digits = cpfInput.value.replace(/\D/g, '').slice(0, 11);
+                    const parts = [];
+
+                    if (digits.length > 0) parts.push(digits.slice(0, 3));
+                    if (digits.length >= 4) parts.push(digits.slice(3, 6));
+                    if (digits.length >= 7) parts.push(digits.slice(6, 9));
+
+                    let formatted = parts.join('.');
+                    if (digits.length >= 10) {
+                        formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9, 11)}`;
+                    } else if (digits.length >= 7) {
+                        formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}`;
+                    } else if (digits.length >= 4) {
+                        formatted = `${digits.slice(0, 3)}.${digits.slice(3, 6)}`;
+                    } else if (digits.length >= 1) {
+                        formatted = digits.slice(0, 3);
+                    }
+
+                    cpfInput.value = formatted;
+                });
             }
 
             const telefoneInput = document.getElementById('telefone');
             if (telefoneInput) {
-                IMask(telefoneInput, { mask: '(00) 00000-0000' });
+                telefoneInput.addEventListener('input', () => {
+                    const digits = telefoneInput.value.replace(/\D/g, '').slice(0, 11);
+                    let formatted = '';
+
+                    if (digits.length > 0) {
+                        formatted = `(${digits.slice(0, 2)}`;
+                    }
+                    if (digits.length >= 3) {
+                        formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}`;
+                    }
+                    if (digits.length >= 8) {
+                        formatted = `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+                    }
+
+                    telefoneInput.value = formatted;
+                });
             }
         });
 

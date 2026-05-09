@@ -14,19 +14,19 @@ document.addEventListener('DOMContentLoaded', () => {
         dot?.setAttribute('fill', dark ? DARK : '#1E3A8A');
         shelves.forEach(s => s.style.background = dark
             ? 'rgba(255,255,255,0.025)'
-            : 'rgba(15,23,42,0.06)');
+            : 'linear-gradient(90deg, transparent, rgba(30,58,138,0.12) 20%, rgba(245,158,11,0.22) 80%, transparent)');
         if (glow1) glow1.style.background = dark
-            ? 'rgba(30,58,138,0.18)' : 'rgba(30,58,138,0.06)';
+            ? 'rgba(30,58,138,0.18)' : 'rgba(30,58,138,0.12)';
         if (glow2) glow2.style.background = dark
-            ? 'rgba(245,158,11,0.09)' : 'rgba(245,158,11,0.04)';
+            ? 'rgba(245,158,11,0.09)' : 'rgba(245,158,11,0.14)';
     }
 
     document.querySelectorAll('.bg-icon').forEach(el => {
-        gsap.set(el, { opacity: gsap.utils.random(0.03, 0.07) });
+        gsap.set(el, { opacity: document.documentElement.classList.contains('dark') ? gsap.utils.random(0.03, 0.07) : gsap.utils.random(0.10, 0.16) });
         gsap.to(el, {
             y: gsap.utils.random(-8, -14),
             rotation: gsap.utils.random(-8, 8),
-            opacity: gsap.utils.random(0.05, 0.09),
+            opacity: document.documentElement.classList.contains('dark') ? gsap.utils.random(0.05, 0.09) : gsap.utils.random(0.12, 0.20),
             duration: gsap.utils.random(8, 20),
             repeat: -1,
             yoyo: true,
@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const countEl = document.getElementById('results-count');
     const clearBtn = document.getElementById('clear-all-btn');
     const clearBtn2 = document.getElementById('clear-filters-btn');
+    const backDashboardBtn = document.getElementById('back-dashboard-btn');
     const chipsEl = document.getElementById('active-filters');
     const dashboardHome = document.getElementById('dashboard-home');
     const acervoSection = document.getElementById('acervo-section');
@@ -266,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 { opacity: 1, y: 0, duration: 0.28, stagger: 0.025, ease: 'power2.out', clearProps: 'transform' });
         }
         toggleAcervoView(hasFilters);
-        if (swiperBlock) swiperBlock.classList.toggle('hidden', !hasFilters || visibleSwiper === 0);
+        if (swiperBlock) swiperBlock.classList.toggle('hidden', visibleSwiper === 0);
     }
 
     document.querySelectorAll('[data-cat-filter]').forEach(btn => {
@@ -288,6 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (typeof tsCategoria !== 'undefined' && tsCategoria) tsCategoria.setValue('');
         if (typeof tsAutor !== 'undefined' && tsAutor) tsAutor.setValue('');
         if (typeof tsSort !== 'undefined' && tsSort) tsSort.setValue('recente');
+        globalSearchPanel?.classList.add('hidden');
         applyFilters();
     }
 
@@ -300,15 +302,111 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
     const topFilterEl = document.getElementById('top-filter');
+    const globalSearchPanel = document.getElementById('global-search-panel');
+    const globalSearchResults = document.getElementById('global-search-results');
+    const globalSearchEmpty = document.getElementById('global-search-empty');
+
+    const normalizeText = value => (value || '')
+        .toString()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .trim();
+
+    const globalSearchItems = (() => {
+        const books = new Map();
+        [...gridCards, ...swiperCards].forEach(card => {
+            const link = card.querySelector('a[href]');
+            const title = card.querySelector('h4')?.textContent?.trim() || card.dataset.titulo || '';
+            const author = card.querySelector('p')?.textContent?.trim() || card.dataset.autorNome || '';
+            const href = link?.getAttribute('href');
+            if (!href || books.has(href)) return;
+            books.set(href, {
+                type: 'Livro',
+                icon: 'ph-book-open',
+                title,
+                subtitle: author || card.dataset.categoria || 'Acervo',
+                href,
+                search: normalizeText(`${title} ${author} ${card.dataset.categoria || ''}`),
+            });
+        });
+
+        const authors = new Map();
+        document.querySelectorAll('.swiperAutores a[href*="/autores/"]').forEach(link => {
+            const card = link.closest('.swiper-slide');
+            const title = link.querySelector('h4')?.textContent?.trim() || '';
+            const subtitle = card?.querySelector('p')?.textContent?.trim() || 'Autor';
+            const href = link.getAttribute('href');
+            if (!href || !title || authors.has(href)) return;
+            authors.set(href, {
+                type: 'Autor',
+                icon: 'ph-user',
+                title,
+                subtitle,
+                href,
+                search: normalizeText(`${title} ${subtitle}`),
+            });
+        });
+
+        return [...books.values(), ...authors.values()];
+    })();
+
+    function renderGlobalSearch(query) {
+        if (!globalSearchPanel || !globalSearchResults || !globalSearchEmpty) return;
+        const clean = normalizeText(query);
+
+        if (!clean) {
+            globalSearchPanel.classList.add('hidden');
+            return;
+        }
+
+        const results = globalSearchItems
+            .filter(item => item.search.includes(clean))
+            .slice(0, 8);
+
+        globalSearchResults.innerHTML = '';
+        globalSearchEmpty.classList.toggle('hidden', results.length > 0);
+
+        results.forEach(item => {
+            const link = document.createElement('a');
+            link.href = item.href;
+            link.className = 'flex items-center gap-3 rounded-md px-3 py-2 transition hover:bg-blue-50 dark:hover:bg-blue-500/10';
+            link.innerHTML = `
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-50 text-slate-600 dark:border-white/10 dark:bg-white/5 dark:text-slate-300">
+                    <i class="ph ${item.icon}"></i>
+                </span>
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-black text-slate-950 dark:text-white">${item.title}</span>
+                    <span class="block truncate text-xs text-slate-500 dark:text-slate-400">${item.type} · ${item.subtitle}</span>
+                </span>
+                <i class="ph ph-arrow-right text-slate-400"></i>
+            `;
+            globalSearchResults.appendChild(link);
+        });
+
+        globalSearchPanel.classList.remove('hidden');
+    }
+
     if (topFilterEl) {
         topFilterEl.addEventListener('input', e => {
             const searchEl = document.getElementById('filter-search');
             if (!searchEl) return;
             searchEl.value = e.target.value;
+            renderGlobalSearch(e.target.value);
             clearTimeout(dbTimer);
             dbTimer = setTimeout(applyFilters, 150);
         });
+        topFilterEl.addEventListener('focus', e => renderGlobalSearch(e.target.value));
+        topFilterEl.addEventListener('keydown', e => {
+            if (e.key === 'Escape') globalSearchPanel?.classList.add('hidden');
+        });
     }
+
+    document.addEventListener('click', e => {
+        if (!globalSearchPanel || !topFilterEl) return;
+        if (globalSearchPanel.contains(e.target) || topFilterEl.contains(e.target)) return;
+        globalSearchPanel.classList.add('hidden');
+    });
 
     if (typeof tsCategoria !== 'undefined' && tsCategoria) tsCategoria.on('change', applyFilters);
     if (typeof tsAutor !== 'undefined' && tsAutor) tsAutor.on('change', applyFilters);
@@ -318,6 +416,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (clearBtn) clearBtn.addEventListener('click', clearAll);
     if (clearBtn2) clearBtn2.addEventListener('click', clearAll);
+    if (backDashboardBtn) {
+        backDashboardBtn.addEventListener('click', () => {
+            clearAll();
+            toggleAcervoView(false);
+            dashboardHome?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+    }
 
     applyFilters();
 

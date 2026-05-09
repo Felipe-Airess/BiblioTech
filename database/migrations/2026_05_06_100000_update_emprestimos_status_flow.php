@@ -7,6 +7,11 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            DB::statement("UPDATE emprestimos SET status = CASE WHEN data_devolucao_real IS NULL THEN 'em_uso' ELSE 'devolvido' END");
+            return;
+        }
+
         DB::statement("ALTER TABLE emprestimos MODIFY status ENUM('solicitado','aprovado','retirado','em_uso','devolvido','encerrado') NOT NULL DEFAULT 'solicitado'");
         DB::statement("ALTER TABLE emprestimos MODIFY data_emprestimo DATE NULL");
         DB::statement("ALTER TABLE emprestimos MODIFY data_devolucao_prevista DATE NULL");
@@ -16,6 +21,10 @@ return new class extends Migration
 
     public function down(): void
     {
+        if (DB::getDriverName() === 'sqlite') {
+            return;
+        }
+
         DB::statement("UPDATE emprestimos SET data_emprestimo = COALESCE(data_emprestimo, CURDATE())");
         DB::statement("UPDATE emprestimos SET data_devolucao_prevista = COALESCE(data_devolucao_prevista, CURDATE())");
         DB::statement("ALTER TABLE emprestimos MODIFY status ENUM('ativo','devolvido','atrasado') NOT NULL DEFAULT 'ativo'");

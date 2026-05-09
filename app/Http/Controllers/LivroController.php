@@ -5,11 +5,14 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use App\Models\Livros;
 use App\Models\Comentario;
 use App\Models\Autor;
 use App\Models\Emprestimos;
 use App\Models\Membros;
+use App\Models\Reserva;
+use App\Models\Categoria;
 
 class LivroController extends Controller{
     public function dashboard()
@@ -19,6 +22,27 @@ class LivroController extends Controller{
         $livrosRecentes = Livros::latest()->with('autor')->limit(12)->get();
         $categorias = Livros::distinct()->pluck('categoria');
         $autores = Autor::withCount('livros')->latest()->get();
+        $reservasPorLivro = Schema::hasTable('reservas')
+            ? Reserva::ativas()
+                ->select('livro_id', DB::raw('COUNT(*) as total'))
+                ->groupBy('livro_id')
+                ->pluck('total', 'livro_id')
+            : collect();
+
+        $livrosMaisReservados = $reservasPorLivro->isNotEmpty()
+            ? Livros::with('autor')
+                ->whereIn('id', $reservasPorLivro->keys())
+                ->get()
+                ->sortByDesc(fn (Livros $livro) => $reservasPorLivro[$livro->id] ?? 0)
+                ->take(4)
+                ->values()
+            : collect();
+
+        $vitrinePrincipal = $bestsellers->first() ?? $livrosRecentes->first() ?? $livros->first();
+        $vitrineNovidades = $livrosRecentes
+            ->reject(fn (Livros $livro) => $vitrinePrincipal && $livro->id === $vitrinePrincipal->id)
+            ->take(3)
+            ->values();
 
         $categoriasMaisAcessadas = Emprestimos::join('livros', 'emprestimos.livro_id', '=', 'livros.id')
             ->whereNotNull('livros.categoria')
@@ -40,6 +64,7 @@ class LivroController extends Controller{
             ->count();
 
         $emprestimosDoMembro = collect();
+        $favoritosDoMembro = collect();
         if (auth()->guard('membro')->check()) {
             $emprestimosDoMembro = Emprestimos::with('livro.autor')
                 ->where('membro_id', auth()->guard('membro')->id())
@@ -49,6 +74,15 @@ class LivroController extends Controller{
                 ])
                 ->orderBy('data_devolucao_prevista')
                 ->get();
+
+            if (Schema::hasTable('favoritos')) {
+                $favoritosDoMembro = auth()->guard('membro')->user()
+                    ->livrosFavoritos()
+                    ->with('autor')
+                    ->orderByPivot('created_at', 'desc')
+                    ->take(4)
+                    ->get();
+            }
         }
 
         $recomendados = $this->recomendarParaUsuario();
@@ -60,50 +94,100 @@ class LivroController extends Controller{
             'categorias',
             'autores',
             'categoriasMaisAcessadas',
+            'reservasPorLivro',
+            'livrosMaisReservados',
+            'vitrinePrincipal',
+            'vitrineNovidades',
             'totalLivros',
             'totalMembros',
             'emprestimosAtivos',
             'devolucoesVencidas',
             'emprestimosDoMembro',
+            'favoritosDoMembro',
             'recomendados'
         ));
     }
     /**
-     * Recomenda livros para o usuário logado com base nas categorias que ele mais pegou emprestado.
+     * Recomenda livros para o membro com base no historico e na lista Quero ler.
      */
     public function recomendarParaUsuario()
     {
-        $user = auth()->user();
         $membro = auth()->guard('membro')->user();
-        $membroId = $membro ? $membro->id : ($user ? $user->id : null);
-        if (!$membroId) {
+
+        if (! $membro) {
             return collect();
         }
 
-        $categorias = \App\Models\Emprestimos::where('membro_id', $membroId)
+        $membroId = $membro->id;
+        $categoriasHistorico = Emprestimos::where('membro_id', $membroId)
             ->join('livros', 'emprestimos.livro_id', '=', 'livros.id')
+            ->whereNotNull('livros.categoria')
             ->select('livros.categoria')
             ->groupBy('livros.categoria')
             ->orderByRaw('COUNT(*) DESC')
-            ->limit(2)
+            ->limit(4)
             ->pluck('livros.categoria');
 
-        $jaPegouIds = \App\Models\Emprestimos::where('membro_id', $membroId)
+        $jaPegouIds = Emprestimos::where('membro_id', $membroId)
             ->pluck('livro_id');
 
-        $recomendados = \App\Models\Livros::whereIn('categoria', $categorias)
-            ->whereNotIn('id', $jaPegouIds)
+        $favoritoIds = collect();
+        $categoriasFavoritas = collect();
+        $autoresFavoritos = collect();
+
+        if (Schema::hasTable('favoritos')) {
+            $favoritos = $membro->livrosFavoritos()
+                ->select('livros.id', 'livros.categoria', 'livros.autor_id')
+                ->get();
+
+            $favoritoIds = $favoritos->pluck('id');
+            $categoriasFavoritas = $favoritos->pluck('categoria')->filter();
+            $autoresFavoritos = $favoritos->pluck('autor_id')->filter();
+        }
+
+        $categoriasInteresse = $categoriasHistorico
+            ->merge($categoriasFavoritas)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $recomendados = Livros::query()
             ->with('autor')
-            ->limit(6)
+            ->whereNotIn('id', $jaPegouIds->merge($favoritoIds)->unique())
+            ->when($categoriasInteresse->isNotEmpty() || $autoresFavoritos->isNotEmpty(), function ($query) use ($categoriasInteresse, $autoresFavoritos) {
+                $query->where(function ($query) use ($categoriasInteresse, $autoresFavoritos) {
+                    if ($categoriasInteresse->isNotEmpty()) {
+                        $query->whereIn('categoria', $categoriasInteresse);
+                    }
+
+                    if ($autoresFavoritos->isNotEmpty()) {
+                        $method = $categoriasInteresse->isNotEmpty() ? 'orWhereIn' : 'whereIn';
+                        $query->{$method}('autor_id', $autoresFavoritos);
+                    }
+                });
+            })
+            ->orderByDesc('e_bestseller')
+            ->latest()
+            ->take(6)
             ->get();
 
-        return $recomendados;
+        if ($recomendados->isNotEmpty()) {
+            return $recomendados;
+        }
+
+        return Livros::with('autor')
+            ->whereNotIn('id', $jaPegouIds->merge($favoritoIds)->unique())
+            ->orderByDesc('e_bestseller')
+            ->latest()
+            ->take(6)
+            ->get();
     }
 
     public function create()
     {
         $autores = Autor::all();
-        return view('admin.livros.create', compact('autores'));
+        $categorias = Categoria::nomesDisponiveis();
+        return view('admin.livros.create', compact('autores', 'categorias'));
     }
 
     public function store(Request $request)
@@ -121,7 +205,9 @@ class LivroController extends Controller{
             'capa'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'categoria'       => 'required|string|max:100', // NOVO
             'quantidade'      => 'required|integer|min:0',  // NOVO: min:0 impede quantidade negativa!
-            'data_publicacao' => 'required|date',           // NOVO
+            'estante'         => 'nullable|string|max:50',
+            'localizacao'     => 'nullable|string|max:100',
+            'data_publicacao' => 'required|date_format:Y-m-d',           // NOVO
             'sinopse'         => 'nullable|string',  
             'editora'         => 'nullable|string|max:255', // NOVO
             'paginas'         => 'nullable|integer|min:1', // NOVO
@@ -139,6 +225,8 @@ class LivroController extends Controller{
             'e_bestseller'    => $request->has('e_bestseller'),
             'categoria'       => $request->categoria,       // NOVO
             'quantidade'      => $request->quantidade,      // NOVO
+            'estante'         => $request->estante,
+            'localizacao'     => $request->localizacao,
             'data_publicacao' => $request->data_publicacao, // NOVO
             'sinopse'         => $request->sinopse,         // NOVO
             'editora'         => $request->editora,         // NOVO
@@ -168,7 +256,8 @@ class LivroController extends Controller{
     {
         $livro = Livros::findOrFail($id);
         $autores = Autor::all();
-        return view('admin.livros.edit', compact('livro', 'autores'));
+        $categorias = Categoria::nomesDisponiveis();
+        return view('admin.livros.edit', compact('livro', 'autores', 'categorias'));
     }
 
     public function update(Request $request, $id)
@@ -188,7 +277,9 @@ class LivroController extends Controller{
             'capa'            => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'categoria'       => 'required|string|max:100', // NOVO
             'quantidade'      => 'required|integer|min:0',  // NOVO
-            'data_publicacao' => 'required|date',           // NOVO
+            'estante'         => 'nullable|string|max:50',
+            'localizacao'     => 'nullable|string|max:100',
+            'data_publicacao' => 'required|date_format:Y-m-d',           // NOVO
             'sinopse'         => 'nullable|string',         // NOVO
             'editora'         => 'nullable|string|max:255', // NOVO
             'paginas'         => 'nullable|integer|min:1',  // NOVO
@@ -206,6 +297,8 @@ class LivroController extends Controller{
             'e_bestseller'    => $request->has('e_bestseller'),
             'categoria'       => $request->categoria,       // NOVO
             'quantidade'      => $request->quantidade,      // NOVO
+            'estante'         => $request->estante,
+            'localizacao'     => $request->localizacao,
             'data_publicacao' => $request->data_publicacao, // NOVO
             'sinopse'         => $request->sinopse,         // NOVO
             'editora'         => $request->editora,         // NOVO
@@ -235,6 +328,15 @@ class LivroController extends Controller{
         $userId = auth()->id();
         $membroId = auth()->guard('membro')->id();
         $comentarioExistente = $livro->comentarioDe($userId, $membroId);
+        $prazoEmprestimoDias = Emprestimos::prazoDiasParaLivro($livro);
+        $bloqueiosEmprestimo = [];
+        $reservasAtivas = Reserva::ativas()
+            ->where('livro_id', $livro->id)
+            ->orderBy('created_at')
+            ->get();
+        $reservaDoMembro = null;
+        $posicaoReserva = null;
+        $isFavorito = false;
 
         // Apenas permitir comentário se o membro já tiver devolvido este livro
         $podeComentar = false;
@@ -243,9 +345,75 @@ class LivroController extends Controller{
                 ->where('membro_id', $membroId)
                 ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
                 ->exists();
+
+            $emprestimoAtivoMesmoLivro = Emprestimos::where('membro_id', $membroId)
+                ->where('livro_id', $livro->id)
+                ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+                ->exists();
+
+            if ($emprestimoAtivoMesmoLivro) {
+                $bloqueiosEmprestimo[] = 'Você já tem uma solicitação ou empréstimo ativo deste livro.';
+            }
+
+            $totalAtivos = Emprestimos::where('membro_id', $membroId)
+                ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+                ->count();
+
+            if ($totalAtivos >= 3) {
+                $bloqueiosEmprestimo[] = 'Você atingiu o limite de 3 empréstimos ativos.';
+            }
+
+            $temVencido = Emprestimos::where('membro_id', $membroId)
+                ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
+                ->where('data_devolucao_prevista', '<', today())
+                ->exists();
+
+            if ($temVencido) {
+                $bloqueiosEmprestimo[] = 'Você possui empréstimos vencidos.';
+            }
+
+            if (Emprestimos::possuiMultaPendente($membroId)) {
+                $bloqueiosEmprestimo[] = 'Você possui multas pendentes.';
+            }
+
+            $reservaDoMembro = $reservasAtivas->firstWhere('membro_id', $membroId);
+            if ($reservaDoMembro) {
+                $posicaoReserva = $reservasAtivas->search(fn ($reserva) => $reserva->id === $reservaDoMembro->id) + 1;
+            }
+
+            if (Schema::hasTable('favoritos')) {
+                $isFavorito = auth()->guard('membro')->user()
+                    ->livrosFavoritos()
+                    ->where('livros.id', $livro->id)
+                    ->exists();
+            }
         }
 
-        return view('livros.show', compact('livro', 'comentarios', 'mediaNota', 'totalComentarios', 'comentarioExistente', 'podeComentar'));
+        $podeSolicitarEmprestimo = auth()->guard('membro')->check()
+            && $livro->quantidade > 0
+            && empty($bloqueiosEmprestimo);
+
+        $podeReservar = auth()->guard('membro')->check()
+            && $livro->quantidade <= 0
+            && empty($bloqueiosEmprestimo)
+            && !$reservaDoMembro;
+
+        return view('livros.show', compact(
+            'livro',
+            'comentarios',
+            'mediaNota',
+            'totalComentarios',
+            'comentarioExistente',
+            'podeComentar',
+            'prazoEmprestimoDias',
+            'bloqueiosEmprestimo',
+            'podeSolicitarEmprestimo',
+            'podeReservar',
+            'reservasAtivas',
+            'reservaDoMembro',
+            'posicaoReserva',
+            'isFavorito'
+        ));
     }
 
     public function storeComentario(Request $request, $id)

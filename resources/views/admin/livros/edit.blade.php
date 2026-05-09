@@ -102,10 +102,13 @@
                         <select id="categoria" name="categoria" required
                             class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500">
                             <option value="">Selecione uma categoria</option>
-                            @foreach(\App\Models\Livros::CATEGORIAS as $cat)
+                            @foreach($categorias as $cat)
                                 <option value="{{ $cat }}" {{ old('categoria', $livro->categoria) == $cat ? 'selected' : '' }}>{{ $cat }}</option>
                             @endforeach
                         </select>
+                        <a href="{{ route('categorias.index') }}" class="mt-2 inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-amber-600 dark:text-amber-300 hover:underline">
+                            <i class="ph ph-tag"></i> Gerenciar categorias
+                        </a>
                     </div>
                     
                     <div class="group">
@@ -117,6 +120,20 @@
                     <div class="group">
                         <label for="data_publicacao" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Lançamento</label>
                         <input id="data_publicacao" type="date" name="data_publicacao" value="{{ old('data_publicacao', $livro->data_publicacao ? (is_string($livro->data_publicacao) ? $livro->data_publicacao : $livro->data_publicacao->format('Y-m-d')) : '') }}" required
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="group">
+                        <label for="estante" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Estante</label>
+                        <input id="estante" type="text" name="estante" value="{{ old('estante', $livro->estante) }}" placeholder="Ex: A3"
+                            class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
+                    </div>
+
+                    <div class="group">
+                        <label for="localizacao" class="block text-xs font-bold text-slate-600 dark:text-gray-400 uppercase tracking-wider mb-2 group-focus-within:text-[#F59E0B] transition-colors">Localização física</label>
+                        <input id="localizacao" type="text" name="localizacao" value="{{ old('localizacao', $livro->localizacao) }}" placeholder="Ex: Corredor 2, prateleira superior"
                             class="block w-full bg-white dark:bg-gray-900 border border-slate-200 dark:border-gray-700 text-slate-900 dark:text-white focus:border-[#F59E0B] focus:ring-1 focus:ring-[#F59E0B] rounded-md shadow-sm transition-all duration-300 hover:border-slate-300 dark:hover:border-gray-500" />
                     </div>
                 </div>

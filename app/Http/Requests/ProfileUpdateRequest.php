@@ -27,7 +27,7 @@ class ProfileUpdateRequest extends FormRequest
                 'required',
                 'string',
                 'lowercase',
-                'email',
+                'email:rfc,dns',
                 'max:255',
                 Rule::unique($userClass)->ignore($user->id),
             ],

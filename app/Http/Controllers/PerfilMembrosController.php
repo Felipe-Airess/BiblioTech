@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Membros;
 use App\Models\Emprestimos;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
 
 class PerfilMembrosController extends Controller
@@ -17,31 +16,21 @@ class PerfilMembrosController extends Controller
             abort(403, 'Não autorizado');
         }
 
-        // Buscar todos os membros com seus empréstimos
-        $membros = Membros::with('comentarios')
+        $membros = Membros::with(['comentarios', 'emprestimos'])
             ->get()
             ->map(function ($membro) {
-                // Empréstimos atrasados (sem devolução e data_devolucao_prevista vencida)
-                $atrasados = Emprestimos::where('membro_id', $membro->id)
-                    ->whereNull('data_devolucao_real')
-                    ->where('data_devolucao_prevista', '<', now()->startOfDay())
-                    ->whereIn('status', ['retirado', 'em_uso', 'devolucao_solicitada'])
-                    ->get();
-
-                // Total de multas não pagas (valor_multa > 0 e não devolvido)
-                $multasNaoPagas = Emprestimos::where('membro_id', $membro->id)
+                $emprestimos = $membro->emprestimos;
+                $atrasados = $emprestimos->filter(fn($emprestimo) => $emprestimo->isAtrasado());
+                $multasNaoPagas = $emprestimos
+                    ->where('status', Emprestimos::STATUS_DEVOLVIDO)
                     ->where('valor_multa', '>', 0)
-                    ->whereNull('data_devolucao_real')
+                    ->whereNull('multa_paga_em')
                     ->sum('valor_multa');
-
-                // Total de empréstimos já completados com sucesso
-                $emprestimosCompletados = Emprestimos::where('membro_id', $membro->id)
-                    ->where('status', 'encerrado')
+                $emprestimosCompletados = $emprestimos
+                    ->where('status', Emprestimos::STATUS_ENCERRADO)
                     ->count();
-
-                // Total de empréstimos ativos
-                $emprestimosAtivos = Emprestimos::where('membro_id', $membro->id)
-                    ->whereIn('status', ['retirado', 'em_uso', 'devolucao_solicitada'])
+                $emprestimosAtivos = $emprestimos
+                    ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
                     ->count();
 
                 // Definir status do perfil
@@ -58,6 +47,8 @@ class PerfilMembrosController extends Controller
                     'multasNaoPagas' => $multasNaoPagas,
                     'emprestimosCompletados' => $emprestimosCompletados,
                     'emprestimosAtivos' => $emprestimosAtivos,
+                    'totalEmprestimos' => $emprestimos->count(),
+                    'ultimoEmprestimo' => $emprestimos->sortByDesc('created_at')->first(),
                     'perfil' => $perfil,
                 ];
             });
@@ -67,7 +58,7 @@ class PerfilMembrosController extends Controller
         $membrosComMulta = $membros->filter(fn($m) => $m['perfil'] === 'com_multa');
         $membrosBom = $membros->filter(fn($m) => $m['perfil'] === 'bom');
 
-        $allMembros = Membros::select('id', 'nome', 'email', 'numero_carteirinha', 'created_at')->get();
+        $allMembros = $membros->sortBy(fn($item) => $item['membro']->nome)->values();
 
         return view('admin.perfil-membros-dashboard', [
             'membrosDevendo' => $membrosDevendo,
@@ -88,12 +79,14 @@ class PerfilMembrosController extends Controller
 
         // Detalhes do membro
         $emprestimos = Emprestimos::where('membro_id', $membro->id)
-            ->with('livro')
+            ->with('livro.autor')
             ->orderBy('created_at', 'desc')
             ->get();
 
         $atrasados = $emprestimos->filter(fn($e) => $e->isAtrasado());
-        $multasTotal = $emprestimos->sum('valor_multa');
+        $multasTotal = $emprestimos
+            ->filter(fn($emprestimo) => $emprestimo->multaPendente())
+            ->sum('valor_multa');
 
         return view('admin.membro-detalhes-dashboard', [
             'membro' => $membro,

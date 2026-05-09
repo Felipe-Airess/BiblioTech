@@ -15,6 +15,10 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                <a href="{{ route('bibliotecarios.index') }}" class="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white text-[11px] font-bold uppercase tracking-widest transition">
+                    <i class="ph ph-users-three text-sm"></i>
+                    Equipe
+                </a>
                 <button type="button" @click="dark = !dark" class="w-9 h-9 rounded-md bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition">
                     <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
                 </button>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Emprestimos; // Usando o seu Model no plural!
+use App\Models\Reserva;
 use App\Notifications\EmprestimoRejeitado;
 use App\Notifications\EmprestimoAprovado;
 use App\Notifications\EmprestimoRetirado;
@@ -23,7 +24,13 @@ class EmprestimoAdminController extends Controller
             ->orderBy('data_devolucao_prevista', 'asc')
             ->get();
 
-        return view('admin.emprestimos.index', compact('emprestimos'));
+        $reservasAtivas = Reserva::with(['livro.autor', 'membro'])
+            ->ativas()
+            ->orderBy('livro_id')
+            ->orderBy('created_at')
+            ->get();
+
+        return view('admin.emprestimos.index', compact('emprestimos', 'reservasAtivas'));
     }
 
     /**
@@ -44,18 +51,10 @@ class EmprestimoAdminController extends Controller
         }
 
         $hoje = Carbon::today();
-        $valorMulta = 0;
-
-        // 2. Lógica da Multa (RN003)
-        // Verifica se a data de hoje passou da data prevista de devolução
-        if ($hoje->greaterThan($emprestimo->data_devolucao_prevista)) {
-            // Calcula quantos dias de atraso
-            $diasAtraso = $hoje->diffInDays($emprestimo->data_devolucao_prevista);
-            
-            // Exemplo: Multa de R$ 2,00 por dia de atraso. 
-            // Pode alterar esse 2.00 para o valor que você definiu nas suas regras!
-            $valorMulta = $diasAtraso * 2.00; 
-        }
+        $valorMulta = Emprestimos::calcularMulta($emprestimo->data_devolucao_prevista, $hoje);
+        $diasAtraso = $valorMulta > 0
+            ? (int) $emprestimo->data_devolucao_prevista->copy()->startOfDay()->diffInDays($hoje)
+            : 0;
 
         // 3. Atualiza o registro preenchendo a data real e a multa
         $emprestimo->update([
@@ -108,18 +107,15 @@ class EmprestimoAdminController extends Controller
 
     public function retirar(Request $request, $id)
     {
-        $emprestimo = Emprestimos::findOrFail($id);
+        $emprestimo = Emprestimos::with('livro')->findOrFail($id);
 
         if ($emprestimo->status !== Emprestimos::STATUS_APROVADO) {
             return redirect()->back()->with('erro', 'Somente empréstimos aprovados podem ser retirados.');
         }
 
-        $prazoDias = (int) $request->input('prazo_dias', 7);
-        if ($prazoDias < 1 || $prazoDias > 60) {
-            return redirect()->back()->with('erro', 'Prazo inválido.');
-        }
-
         $hoje = Carbon::today();
+        $prazoDias = Emprestimos::prazoDiasParaLivro($emprestimo->livro);
+
         $emprestimo->update([
             'status' => Emprestimos::STATUS_RETIRADO,
             'data_emprestimo' => $hoje,
@@ -131,7 +127,7 @@ class EmprestimoAdminController extends Controller
             $emprestimo->membro->notify(new EmprestimoRetirado($emprestimo));
         }
 
-        return redirect()->back()->with('sucesso', 'Retirada confirmada.');
+        return redirect()->back()->with('sucesso', "Retirada confirmada. Prazo de {$prazoDias} dias aplicado automaticamente.");
     }
 
     public function iniciarUso($id)
@@ -162,6 +158,81 @@ class EmprestimoAdminController extends Controller
         ]);
 
         return redirect()->back()->with('sucesso', 'Empréstimo encerrado.');
+    }
+
+    public function regularizarMulta($id)
+    {
+        $emprestimo = Emprestimos::findOrFail($id);
+
+        if (!$emprestimo->multaPendente()) {
+            return redirect()->back()->with('erro', 'Este empréstimo não possui multa pendente.');
+        }
+
+        $emprestimo->update([
+            'multa_paga_em' => now(),
+            'multa_regularizada_por' => auth()->id(),
+        ]);
+
+        return redirect()->back()->with('sucesso', 'Multa regularizada com sucesso. O membro já pode solicitar novos empréstimos.');
+    }
+
+    public function atenderReserva($id)
+    {
+        $reserva = Reserva::with(['livro', 'membro'])->findOrFail($id);
+
+        if ($reserva->status !== Reserva::STATUS_ATIVA) {
+            return redirect()->back()->with('erro', 'Esta reserva não está ativa.');
+        }
+
+        $primeiraDaFila = Reserva::ativas()
+            ->where('livro_id', $reserva->livro_id)
+            ->orderBy('created_at')
+            ->first();
+
+        if (!$primeiraDaFila || $primeiraDaFila->id !== $reserva->id) {
+            return redirect()->back()->with('erro', 'Só é possível atender a primeira reserva da fila.');
+        }
+
+        if (!$reserva->livro || $reserva->livro->quantidade <= 0) {
+            return redirect()->back()->with('erro', 'Ainda não há exemplar disponível para atender esta reserva.');
+        }
+
+        if (!$reserva->membro) {
+            return redirect()->back()->with('erro', 'Membro da reserva não encontrado.');
+        }
+
+        $jaTemEmprestimo = Emprestimos::where('membro_id', $reserva->membro_id)
+            ->where('livro_id', $reserva->livro_id)
+            ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+            ->exists();
+
+        if ($jaTemEmprestimo) {
+            return redirect()->back()->with('erro', 'Este membro já possui solicitação ou empréstimo ativo deste livro.');
+        }
+
+        if (Emprestimos::possuiMultaPendente($reserva->membro_id)) {
+            return redirect()->back()->with('erro', 'O membro possui multa pendente e não pode receber a reserva agora.');
+        }
+
+        $emprestimo = Emprestimos::create([
+            'membro_id' => $reserva->membro_id,
+            'livro_id' => $reserva->livro_id,
+            'status' => Emprestimos::STATUS_APROVADO,
+            'data_emprestimo' => null,
+            'data_devolucao_prevista' => null,
+            'data_devolucao_real' => null,
+            'valor_multa' => 0,
+            'approved_by' => auth()->id(),
+            'approved_at' => now(),
+        ]);
+
+        $reserva->livro->decrement('quantidade');
+        $reserva->update(['status' => Reserva::STATUS_ATENDIDA]);
+
+        $emprestimo->load('livro');
+        $reserva->membro->notify(new EmprestimoAprovado($emprestimo));
+
+        return redirect()->back()->with('sucesso', 'Reserva atendida. O empréstimo foi aprovado e aguarda retirada.');
     }
 
     public function rejeitar(Request $request, $id)

@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Rules\ValidCpf;
+use App\Rules\ValidPhonePrefix;
 use App\Models\Membros;
 use Illuminate\Http\Request;
 use App\Models\User; // Para criar o usuário associado ao membro
+use Illuminate\Validation\Rule;
 
 class MembrosController extends Controller
 {
@@ -14,16 +17,21 @@ class MembrosController extends Controller
 
     }
 
+    public function edit(Membros $membro)
+    {
+        return view('membros.edit', compact('membro'));
+    }
+
     public function store(Request $request)
     {
         // Validação dos dados
         $request->validate([
             'nome' => 'required|string|max:255',
-            'email' => 'required|email|unique:membros,email',
-            'cpf' => 'required|string|unique:membros,cpf',
-            'telefone' => 'required|string|max:20',
+            'email' => 'required|email:rfc,dns|unique:membros,email',
+            'cpf' => ['required', 'string', 'unique:membros,cpf', new ValidCpf],
+            'telefone' => ['required', 'string', 'max:20', new ValidPhonePrefix],
             'endereco' => 'required|string|max:255',
-            'data_nascimento' => 'required|date',
+            'data_nascimento' => 'required|date_format:Y-m-d',
             'tipo_membro' => 'required|string|max:50',
             'password' => 'required|string|min:8|confirmed',
         ]);
@@ -45,6 +53,39 @@ class MembrosController extends Controller
         ]);
 
         return redirect()->back()->with('sucesso', 'Membro cadastrado com sucesso! Carteirinha gerada: ' . $numeroCarteirinha);
+    }
+
+    public function update(Request $request, Membros $membro)
+    {
+        $validated = $request->validate([
+            'nome' => 'required|string|max:255',
+            'email' => [
+                'required',
+                'email:rfc,dns',
+                Rule::unique('membros', 'email')->ignore($membro->id),
+            ],
+            'cpf' => [
+                'required',
+                'string',
+                Rule::unique('membros', 'cpf')->ignore($membro->id),
+                new ValidCpf,
+            ],
+            'telefone' => ['required', 'string', 'max:20', new ValidPhonePrefix],
+            'endereco' => 'required|string|max:255',
+            'data_nascimento' => 'required|date_format:Y-m-d',
+            'tipo_membro' => 'required|string|max:50',
+            'password' => 'nullable|string|min:8|confirmed',
+        ]);
+
+        if (blank($validated['password'] ?? null)) {
+            unset($validated['password']);
+        }
+
+        $membro->update($validated);
+
+        return redirect()
+            ->route('admin.membros.show', $membro)
+            ->with('sucesso', 'Dados do membro atualizados com sucesso.');
     }
 
     private function gerarNumeroCarteirinha(): string
