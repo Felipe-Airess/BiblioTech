@@ -17,6 +17,14 @@
             </div>
 
             <div class="flex items-center gap-2">
+                <form method="POST" action="{{ route('notifications.clear-read') }}" data-confirm="delete" data-title="Limpar notificações lidas?" data-text="Somente as notificações já lidas serão removidas da central.">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="inline-flex h-10 items-center gap-2 rounded-md border border-slate-200 bg-white px-4 text-[11px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                        <i class="ph ph-broom"></i>
+                        Limpar lidas
+                    </button>
+                </form>
                 <button id="notifications-mark-page" type="button" class="inline-flex h-10 items-center gap-2 rounded-md bg-[#1E3A8A] px-4 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-blue-800">
                     <i class="ph ph-checks"></i>
                     Marcar lidas
@@ -30,7 +38,7 @@
 
     <div class="-mx-4 min-h-screen bg-gradient-to-b from-slate-100 via-blue-50 to-slate-100 px-4 py-8 dark:from-[#0f172a] dark:via-[#0f172a] dark:to-[#0b1120] sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <main class="mx-auto max-w-6xl space-y-6">
-            <section class="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <section class="grid grid-cols-2 gap-3 lg:grid-cols-7">
                 <button data-notification-filter="todas" class="notification-filter rounded-md border border-blue-200 bg-blue-50 p-4 text-left text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
                     <p class="text-[10px] font-black uppercase tracking-widest">Todas</p>
                     <p class="mt-1 text-2xl font-black">{{ $notifications->count() }}</p>
@@ -46,6 +54,14 @@
                 <button data-notification-filter="devolucoes" class="notification-filter rounded-md border border-slate-200 bg-white p-4 text-left text-slate-700 dark:border-white/10 dark:bg-[#0d1420] dark:text-slate-300">
                     <p class="text-[10px] font-black uppercase tracking-widest">Devoluções</p>
                     <p class="mt-1 text-2xl font-black">{{ $typeCounts['devolucoes'] ?? 0 }}</p>
+                </button>
+                <button data-notification-filter="reservas" class="notification-filter rounded-md border border-slate-200 bg-white p-4 text-left text-slate-700 dark:border-white/10 dark:bg-[#0d1420] dark:text-slate-300">
+                    <p class="text-[10px] font-black uppercase tracking-widest">Reservas</p>
+                    <p class="mt-1 text-2xl font-black">{{ $typeCounts['reservas'] ?? 0 }}</p>
+                </button>
+                <button data-notification-filter="alertas" class="notification-filter rounded-md border border-slate-200 bg-white p-4 text-left text-slate-700 dark:border-white/10 dark:bg-[#0d1420] dark:text-slate-300">
+                    <p class="text-[10px] font-black uppercase tracking-widest">Alertas</p>
+                    <p class="mt-1 text-2xl font-black">{{ $typeCounts['alertas'] ?? 0 }}</p>
                 </button>
                 <button data-notification-filter="mensagens" class="notification-filter rounded-md border border-slate-200 bg-white p-4 text-left text-slate-700 dark:border-white/10 dark:bg-[#0d1420] dark:text-slate-300">
                     <p class="text-[10px] font-black uppercase tracking-widest">Mensagens</p>
@@ -74,7 +90,7 @@
                             $message = $data['message'] ?? 'Aviso do sistema.';
                             $isUnread = is_null($notification->read_at);
                         @endphp
-                        <article class="notification-row p-5 {{ $isUnread ? 'bg-blue-50/60 dark:bg-blue-500/5' : '' }}" data-filter-group="{{ $meta['grupo'] }}" data-unread="{{ $isUnread ? '1' : '0' }}" data-search="{{ Str::lower($title . ' ' . $message) }}">
+                        <article class="notification-row p-5 {{ $isUnread ? 'bg-blue-50/60 dark:bg-blue-500/5' : '' }}" data-filter-group="{{ $meta['grupo'] }}" data-unread="{{ $isUnread ? '1' : '0' }}" data-search="{{ \Illuminate\Support\Str::lower($title . ' ' . $message) }}">
                             <div class="grid gap-4 sm:grid-cols-[48px_minmax(0,1fr)_auto] sm:items-start">
                                 <span class="flex h-12 w-12 items-center justify-center rounded-md border text-xl {{ $meta['classes'] }}">
                                     <i class="ph {{ $meta['icon'] }}"></i>
@@ -87,11 +103,33 @@
                                             <span class="rounded-md bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">Nova</span>
                                         @endif
                                     </div>
-                                    <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{!! $message !!}</p>
+                                    <p class="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400">{!! nl2br(e($message)) !!}</p>
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        @if($notification->action)
+                                            <a href="{{ $notification->action['url'] }}" class="inline-flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 text-[10px] font-black uppercase tracking-widest text-blue-700 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20">
+                                                <i class="ph ph-arrow-square-out"></i>
+                                                {{ $notification->action['label'] }}
+                                            </a>
+                                        @endif
+                                        @if($isUnread)
+                                            <form method="POST" action="{{ route('notifications.read', $notification->id) }}">
+                                                @csrf
+                                                <button type="submit" class="inline-flex h-9 items-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                                                    <i class="ph ph-check"></i>
+                                                    Marcar lida
+                                                </button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </div>
-                                <time class="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                                    {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
-                                </time>
+                                <div class="text-right">
+                                    <time class="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                                        {{ \Carbon\Carbon::parse($notification->created_at)->diffForHumans() }}
+                                    </time>
+                                    @if($notification->read_at)
+                                        <p class="mt-1 text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Lida</p>
+                                    @endif
+                                </div>
                             </div>
                         </article>
                     @empty

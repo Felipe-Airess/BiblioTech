@@ -1,6 +1,6 @@
 <x-app-layout>
     @php
-        $nascimento = $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('d/m/Y') : 'Nao informado';
+        $nascimento = $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('d/m/Y') : 'Não informado';
         $tipo = ucfirst($membro->tipo_membro ?? 'Comum');
         $statusOk = $atrasados === 0 && (float) $multasPendentes <= 0;
     @endphp
@@ -77,11 +77,11 @@
 
                         <div class="rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[.03]">
                             <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">CPF</p>
-                            <p class="mt-2 text-sm font-bold text-slate-950 dark:text-white">{{ $membro->cpf ?? 'Nao informado' }}</p>
+                            <p class="mt-2 text-sm font-bold text-slate-950 dark:text-white">{{ $membro->cpf ?? 'Não informado' }}</p>
                         </div>
                         <div class="rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[.03]">
                             <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">Telefone</p>
-                            <p class="mt-2 text-sm font-bold text-slate-950 dark:text-white">{{ $membro->telefone ?? 'Nao informado' }}</p>
+                            <p class="mt-2 text-sm font-bold text-slate-950 dark:text-white">{{ $membro->telefone ?? 'Não informado' }}</p>
                         </div>
                         <div class="rounded-md border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-white/[.03]">
                             <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">Nascimento</p>

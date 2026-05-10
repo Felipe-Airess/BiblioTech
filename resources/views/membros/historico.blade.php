@@ -195,7 +195,7 @@
                                                 {{ $statusStyles['label'] }}
                                             </span>
                                         </div>
-                                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $reserva->livro?->autor?->nome ?? 'Autor nao informado' }}</p>
+                                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $reserva->livro?->autor?->nome ?? 'Autor não informado' }}</p>
                                     </div>
                                 </div>
 
@@ -296,7 +296,7 @@
                                     </div>
 
                                     <h3 class="mt-3 text-lg font-black leading-tight text-slate-950 dark:text-white">{{ $emp->livro?->titulo ?? 'Livro removido' }}</h3>
-                                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $emp->livro?->autor?->nome ?? 'Autor nao informado' }}</p>
+                                    <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $emp->livro?->autor?->nome ?? 'Autor não informado' }}</p>
 
                                     <div class="mt-4 grid grid-cols-1 gap-2 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-3">
                                         <div class="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">

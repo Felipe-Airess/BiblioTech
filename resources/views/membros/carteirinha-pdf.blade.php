@@ -26,7 +26,7 @@
 <body>
 @php
     $regular = $atrasados === 0 && (float) $multasPendentes <= 0;
-    $nascimento = $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('d/m/Y') : 'Nao informado';
+    $nascimento = $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('d/m/Y') : 'Não informado';
 @endphp
 
 <div class="card">
@@ -46,11 +46,11 @@
             <div class="row">
                 <div class="cell">
                     <div class="label">CPF</div>
-                    <div class="value">{{ $membro->cpf ?? 'Nao informado' }}</div>
+                    <div class="value">{{ $membro->cpf ?? 'Não informado' }}</div>
                 </div>
                 <div class="cell">
                     <div class="label">Telefone</div>
-                    <div class="value">{{ $membro->telefone ?? 'Nao informado' }}</div>
+                    <div class="value">{{ $membro->telefone ?? 'Não informado' }}</div>
                 </div>
             </div>
             <div class="row">

@@ -25,7 +25,8 @@
                     Voltar
                 </a>
                 <button type="button" @click="dark = !dark" class="w-9 h-9 rounded-md bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition">
-                    <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
+                    <i class="ph ph-sun text-sm hidden dark:inline-block"></i>
+                    <i class="ph ph-moon text-sm dark:hidden"></i>
                 </button>
             </div>
         </div>
@@ -151,10 +152,16 @@
                         </div>
                     </div>
 
-                    <button type="button" id="openMsgModalBtn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] border border-blue-800 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition">
-                        <i class="ph ph-envelope-simple text-sm"></i>
-                        Enviar Mensagem
-                    </button>
+                    <div class="flex flex-col gap-2 sm:flex-row">
+                        <button type="button" id="openPasswordModalBtn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-amber-500 border border-amber-600 text-slate-950 text-[11px] font-black uppercase tracking-widest hover:bg-amber-400 transition">
+                            <i class="ph ph-key text-sm"></i>
+                            Redefinir senha
+                        </button>
+                        <button type="button" id="openMsgModalBtn" class="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-md bg-[#1E3A8A] border border-blue-800 text-white text-[11px] font-black uppercase tracking-widest hover:bg-blue-700 transition">
+                            <i class="ph ph-envelope-simple text-sm"></i>
+                            Enviar Mensagem
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -338,10 +345,55 @@
         </div>
     </div>
 
+    <div id="passwordModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div class="w-full max-w-lg mx-4">
+            <div class="bg-white dark:bg-[#0d1420] rounded-md p-6 border border-slate-200 dark:border-white/10 shadow-2xl">
+                <div class="flex items-center justify-between mb-5">
+                    <div class="flex items-center gap-2">
+                        <i class="ph ph-key text-amber-500 text-lg"></i>
+                        <h4 class="text-base font-black text-slate-900 dark:text-white">Redefinir senha do membro</h4>
+                    </div>
+                    <button type="button" id="closePasswordModal" class="w-8 h-8 rounded-md bg-slate-100 dark:bg-white/5 text-slate-500 hover:text-slate-900 dark:hover:text-white transition flex items-center justify-center">
+                        <i class="ph ph-x text-sm"></i>
+                    </button>
+                </div>
+
+                <p class="text-sm leading-6 text-slate-600 dark:text-slate-400">
+                    Defina uma senha temporária para <strong class="text-slate-900 dark:text-white">{{ $membro->nome }}</strong>. Depois informe a senha ao membro pelo atendimento.
+                </p>
+
+                <form method="POST" action="{{ route('admin.membros.password', $membro) }}" class="mt-5 space-y-4" data-confirm="loan" data-title="Redefinir senha?" data-text="A senha atual do membro será substituída pela nova senha informada.">
+                    @csrf
+                    @method('PUT')
+
+                    <div>
+                        <label for="member_password" class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500 mb-1 block">Nova senha</label>
+                        <input id="member_password" name="password" type="password" autocomplete="new-password" minlength="8" required class="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition">
+                        <x-input-error :messages="$errors->get('password')" class="mt-2" />
+                    </div>
+
+                    <div>
+                        <label for="member_password_confirmation" class="text-xs font-bold uppercase tracking-widest text-slate-500 dark:text-gray-500 mb-1 block">Confirmar nova senha</label>
+                        <input id="member_password_confirmation" name="password_confirmation" type="password" autocomplete="new-password" minlength="8" required class="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 text-slate-900 dark:text-white text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500/30 transition">
+                    </div>
+
+                    <div class="flex items-center justify-end gap-2 pt-2">
+                        <button type="button" id="cancelPasswordBtn" class="px-4 py-2 rounded-md bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-gray-300 text-[11px] font-bold uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-white/10 transition">Cancelar</button>
+                        <button type="submit" class="px-5 py-2 rounded-md bg-amber-500 border border-amber-600 text-slate-950 text-[11px] font-black uppercase tracking-widest hover:bg-amber-400 transition">
+                            <i class="ph ph-floppy-disk mr-1"></i>
+                            Salvar senha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
     document.addEventListener('DOMContentLoaded', () => {
         const modal = document.getElementById('messageModal');
         const form = document.getElementById('messageForm');
+        const passwordModal = document.getElementById('passwordModal');
 
         function openModal() {
             modal.classList.remove('hidden');
@@ -353,10 +405,24 @@
             modal.classList.add('hidden');
         }
 
+        function openPasswordModal() {
+            passwordModal.classList.remove('hidden');
+            passwordModal.classList.add('flex');
+        }
+
+        function closePasswordModal() {
+            passwordModal.classList.remove('flex');
+            passwordModal.classList.add('hidden');
+        }
+
         document.getElementById('openMsgModalBtn')?.addEventListener('click', openModal);
         document.getElementById('closeModal')?.addEventListener('click', closeModal);
         document.getElementById('cancelMsgBtn')?.addEventListener('click', closeModal);
         modal.addEventListener('click', event => { if (event.target === modal) closeModal(); });
+        document.getElementById('openPasswordModalBtn')?.addEventListener('click', openPasswordModal);
+        document.getElementById('closePasswordModal')?.addEventListener('click', closePasswordModal);
+        document.getElementById('cancelPasswordBtn')?.addEventListener('click', closePasswordModal);
+        passwordModal.addEventListener('click', event => { if (event.target === passwordModal) closePasswordModal(); });
 
         form?.addEventListener('submit', async event => {
             event.preventDefault();

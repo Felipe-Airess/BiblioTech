@@ -31,7 +31,7 @@ class MessageToMember extends Notification
         return [
             'title' => $this->subject,
             'message' => $this->message,
-            'from' => $this->fromUser ? ($this->fromUser->name ?? $this->fromUser->nome ?? 'Admin') : 'Admin',
+            'from' => $this->fromUser ? ($this->fromUser->name ?? $this->fromUser->nome ?? 'Administração') : 'Administração',
         ];
     }
 }

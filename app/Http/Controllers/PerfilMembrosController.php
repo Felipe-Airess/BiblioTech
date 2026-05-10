@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Membros;
 use App\Models\Emprestimos;
+use App\Models\AuditLog;
+use App\Notifications\MessageToMember;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class PerfilMembrosController extends Controller
 {
@@ -116,5 +119,35 @@ class PerfilMembrosController extends Controller
         }
 
         return response()->json(['ok' => true]);
+    }
+
+    public function resetPassword(Request $request, Membros $membro)
+    {
+        $user = auth()->user();
+        if (!$user || !in_array($user->tipo_usuario, ['gerente', 'bibliotecario'])) {
+            abort(403, 'Não autorizado');
+        }
+
+        $data = $request->validate([
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        $membro->forceFill([
+            'password' => Hash::make($data['password']),
+            'remember_token' => null,
+        ])->save();
+
+        AuditLog::record('senha_membro_redefinida', "Redefiniu a senha do membro {$membro->nome}.", $membro, [
+            'email' => $membro->email,
+            'responsavel' => $user->name,
+        ]);
+
+        $membro->notify(new MessageToMember(
+            'Senha redefinida',
+            'Sua senha foi redefinida pela equipe da biblioteca. Use a nova senha informada no atendimento.',
+            $user
+        ));
+
+        return back()->with('sucesso', 'Senha do membro redefinida com sucesso.');
     }
 }

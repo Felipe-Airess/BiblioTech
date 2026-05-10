@@ -56,7 +56,7 @@
                             <option value="recente">Mais Recentes</option>
                             <option value="titulo_az">Título A → Z</option>
                             <option value="titulo_za">Título Z → A</option>
-                            <option value="bestseller">Bestsellers</option>
+                            <option value="bestseller">Destaques</option>
                         </select>
                     </div>
                 </div>
@@ -82,7 +82,7 @@
                                     <div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-900/20 to-[#080d14]"><i class="ph ph-book text-3xl text-emerald-900/40"></i></div>
                                 @endif
                                 @if($livro->e_bestseller)
-                                <div class="bestseller-badge">★ Bestseller</div>
+                                <div class="bestseller-badge">★ Destaque</div>
                                 @endif
                                 <div class="absolute inset-0 bg-[#080d14]/94 opacity-0 group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center text-center p-5 gap-3">
                                     <p class="text-gray-300 text-[11px] leading-relaxed line-clamp-3">{{ $livro->sinopse ?? 'Sinopse não disponível.' }}</p>
@@ -92,7 +92,7 @@
                             <div class="p-3 flex-grow flex flex-col gap-0.5">
                                 <span class="text-[9px] font-bold uppercase tracking-widest text-emerald-500/70">{{ $livro->categoria ?? 'Geral' }}</span>
                                 <h4 class="text-white text-xs font-semibold truncate group-hover:text-emerald-400 transition-colors">{{ $livro->titulo }}</h4>
-                                <p class="text-gray-500 text-[10px] truncate">{{ $livro->autor->nome ?? 'N/A' }}</p>
+                                <p class="text-gray-500 text-[10px] truncate">{{ $livro->autor->nome ?? 'Não informado' }}</p>
                             </div>
                         </a>
                     </div>

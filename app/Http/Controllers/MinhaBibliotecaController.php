@@ -193,4 +193,93 @@ class MinhaBibliotecaController extends Controller
             'sugestoes'
         ));
     }
+
+    public function situacao()
+    {
+        $membro = auth()->guard('membro')->user();
+
+        $emprestimos = Emprestimos::with('livro.autor')
+            ->where('membro_id', $membro->id)
+            ->latest()
+            ->get();
+
+        $ativos = $emprestimos
+            ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
+            ->sortBy('data_devolucao_prevista')
+            ->values();
+
+        $solicitacoes = $emprestimos
+            ->whereIn('status', [Emprestimos::STATUS_SOLICITADO, Emprestimos::STATUS_APROVADO])
+            ->values();
+
+        $atrasados = $emprestimos
+            ->filter(fn (Emprestimos $emprestimo) => $emprestimo->isAtrasado())
+            ->values();
+
+        $multasPendentes = $emprestimos
+            ->filter(fn (Emprestimos $emprestimo) => $emprestimo->multaPendente())
+            ->values();
+
+        $reservasAtivas = Schema::hasTable('reservas')
+            ? Reserva::with('livro.autor')
+                ->where('membro_id', $membro->id)
+                ->where('status', Reserva::STATUS_ATIVA)
+                ->latest()
+                ->get()
+                ->map(function (Reserva $reserva) {
+                    $reserva->posicao_fila = Reserva::ativas()
+                        ->where('livro_id', $reserva->livro_id)
+                        ->where('created_at', '<=', $reserva->created_at)
+                        ->count();
+
+                    return $reserva;
+                })
+            : collect();
+
+        $favoritos = Schema::hasTable('favoritos')
+            ? $membro->livrosFavoritos()
+                ->with('autor')
+                ->orderByPivot('created_at', 'desc')
+                ->take(4)
+                ->get()
+            : collect();
+
+        $notificacoes = $membro->notifications()
+            ->latest()
+            ->take(5)
+            ->get();
+
+        $proximoPrazo = $ativos->first();
+        $totalMultas = $multasPendentes->sum('valor_multa');
+        $temPendencia = $atrasados->isNotEmpty() || $multasPendentes->isNotEmpty();
+
+        $situacao = $temPendencia
+            ? [
+                'titulo' => 'Atenção necessária',
+                'descricao' => 'Há atraso ou multa pendente para regularizar.',
+                'icone' => 'ph-warning-circle',
+                'classes' => 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200',
+            ]
+            : [
+                'titulo' => 'Tudo em dia',
+                'descricao' => 'Nenhuma pendência aberta no momento.',
+                'icone' => 'ph-shield-check',
+                'classes' => 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200',
+            ];
+
+        return view('membros.situacao', compact(
+            'membro',
+            'emprestimos',
+            'ativos',
+            'solicitacoes',
+            'atrasados',
+            'multasPendentes',
+            'reservasAtivas',
+            'favoritos',
+            'notificacoes',
+            'proximoPrazo',
+            'totalMultas',
+            'situacao'
+        ));
+    }
 }

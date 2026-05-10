@@ -10,7 +10,7 @@
                     </div>
                 </a>
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-amber-500 mb-0.5">Admin</p>
+                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-amber-500 mb-0.5">Administração</p>
                     <h1 class="text-lg font-black text-slate-900 dark:text-white">Painel de Empréstimos</h1>
                 </div>
             </div>
@@ -223,7 +223,7 @@
                 <p class="mt-1 text-sm font-black text-slate-900 dark:text-white">{{ \App\Models\Emprestimos::PRAZO_LIVRO_COMUM_DIAS }} dias</p>
             </div>
             <div>
-                <p class="text-[10px] uppercase tracking-widest text-slate-500">Bestseller</p>
+                <p class="text-[10px] uppercase tracking-widest text-slate-500">Destaque</p>
                 <p class="mt-1 text-sm font-black text-slate-900 dark:text-white">{{ \App\Models\Emprestimos::PRAZO_BESTSELLER_DIAS }} dias</p>
             </div>
             <div>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Rules\ValidCpf;
 use App\Rules\ValidPhonePrefix;
 use App\Models\Membros;
+use App\Models\AuditLog;
 use Illuminate\Http\Request;
 use App\Models\User; // Para criar o usuário associado ao membro
 use Illuminate\Validation\Rule;
@@ -27,7 +28,7 @@ class MembrosController extends Controller
         // Validação dos dados
         $request->validate([
             'nome' => 'required|string|max:255',
-            'email' => 'required|email:rfc,dns|unique:membros,email',
+            'email' => 'required|email|unique:membros,email',
             'cpf' => ['required', 'string', 'unique:membros,cpf', new ValidCpf],
             'telefone' => ['required', 'string', 'max:20', new ValidPhonePrefix],
             'endereco' => 'required|string|max:255',
@@ -39,7 +40,7 @@ class MembrosController extends Controller
         $numeroCarteirinha = $this->gerarNumeroCarteirinha();
 
         // Salvar no banco de dados (senha já será criptografada pelo cast do modelo)
-        Membros::create([
+        $membro = Membros::create([
             'user_id' => $request->id, // Associa o membro ao usuário criado
             'nome' => $request->nome,
             'email' => $request->email,
@@ -51,6 +52,10 @@ class MembrosController extends Controller
             'numero_carteirinha' => $numeroCarteirinha,
             'password' => $request->password,
         ]);
+        AuditLog::record('membro_criado', "Cadastrou o membro {$membro->nome}.", $membro, [
+            'carteirinha' => $numeroCarteirinha,
+            'email' => $membro->email,
+        ]);
 
         return redirect()->back()->with('sucesso', 'Membro cadastrado com sucesso! Carteirinha gerada: ' . $numeroCarteirinha);
     }
@@ -61,7 +66,7 @@ class MembrosController extends Controller
             'nome' => 'required|string|max:255',
             'email' => [
                 'required',
-                'email:rfc,dns',
+                'email',
                 Rule::unique('membros', 'email')->ignore($membro->id),
             ],
             'cpf' => [
@@ -82,6 +87,10 @@ class MembrosController extends Controller
         }
 
         $membro->update($validated);
+        AuditLog::record('membro_atualizado', "Atualizou os dados do membro {$membro->nome}.", $membro, [
+            'carteirinha' => $membro->numero_carteirinha,
+            'email' => $membro->email,
+        ]);
 
         return redirect()
             ->route('admin.membros.show', $membro)

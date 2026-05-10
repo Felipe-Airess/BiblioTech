@@ -177,10 +177,53 @@ document.addEventListener('DOMContentLoaded', () => {
         navigation: { nextEl: '#swiper-autores-next', prevEl: '#swiper-autores-prev' },
     });
 
-    const tsCfg = { allowEmptyOption: true, create: false, maxOptions: 100 };
+    const tsCfg = { allowEmptyOption: true, create: false, maxOptions: 100, plugins: ['clear_button'] };
     const tsCategoria = new TomSelect('#filter-categoria', { ...tsCfg });
     const tsAutor = new TomSelect('#filter-autor', { ...tsCfg, searchField: ['text'] });
+    const tsDisponibilidade = new TomSelect('#filter-disponibilidade', { ...tsCfg });
+    const tsDestaque = new TomSelect('#filter-destaque', { ...tsCfg });
     const tsSort = new TomSelect('#filter-sort', { create: false, allowEmptyOption: false });
+
+    function styleTomSelect(instance) {
+        const control = instance?.control;
+        const dropdown = instance?.dropdown;
+        control?.classList.add(
+            'min-h-[44px]',
+            'rounded-md',
+            'border',
+            'border-slate-200',
+            'bg-white',
+            'px-3',
+            'py-2',
+            'text-sm',
+            'text-slate-800',
+            'shadow-none',
+            'transition',
+            'focus-within:border-[#1E3A8A]',
+            'focus-within:ring-2',
+            'focus-within:ring-[#1E3A8A]/20',
+            'dark:border-white/10',
+            'dark:bg-[#080d14]',
+            'dark:text-slate-200'
+        );
+        dropdown?.classList.add(
+            'mt-1',
+            'overflow-hidden',
+            'rounded-md',
+            'border',
+            'border-slate-200',
+            'bg-white',
+            'text-slate-800',
+            'shadow-xl',
+            'shadow-slate-950/10',
+            'dark:border-white/10',
+            'dark:bg-[#080d14]',
+            'dark:text-slate-200',
+            'dark:shadow-black/40'
+        );
+    }
+
+    [tsCategoria, tsAutor, tsDisponibilidade, tsDestaque, tsSort].forEach(styleTomSelect);
 
     const grid = document.getElementById('acervo-grid');
     const gridCards = grid ? [...grid.querySelectorAll('.acervo-card')] : [];
@@ -209,8 +252,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const search = (document.getElementById('filter-search')?.value || '').toLowerCase().trim();
         const categoria = String(tsCategoria.getValue() || '').trim();
         const autorId = String(tsAutor.getValue() || '').trim();
+        const disponibilidade = String(tsDisponibilidade.getValue() || '').trim();
+        const destaque = String(tsDestaque.getValue() || '').trim();
         const sort = tsSort.getValue();
-        const hasFilters = Boolean(search || categoria || autorId);
+        const hasFilters = Boolean(search || categoria || autorId || disponibilidade || destaque);
 
         let visibleGrid = 0;
         let visibleSwiper = 0;
@@ -218,7 +263,9 @@ document.addEventListener('DOMContentLoaded', () => {
         gridCards.forEach(c => {
             const ok = (!search || c.dataset.titulo.includes(search) || c.dataset.autorNome.includes(search))
                 && (!categoria || c.dataset.categoria === categoria)
-                && (!autorId || String(c.dataset.autorId) === String(autorId));
+                && (!autorId || String(c.dataset.autorId) === String(autorId))
+                && (!disponibilidade || (disponibilidade === 'disponivel' ? c.dataset.disponivel === '1' : c.dataset.disponivel === '0'))
+                && (!destaque || (destaque === 'bestseller' ? c.dataset.bestseller === '1' : Number(c.dataset.reservas || 0) > 0));
             c.style.display = ok ? '' : 'none';
             if (ok) visibleGrid++;
         });
@@ -226,7 +273,9 @@ document.addEventListener('DOMContentLoaded', () => {
         swiperCards.forEach(c => {
             const ok = (!search || c.dataset.titulo.includes(search) || c.dataset.autorNome.includes(search))
                 && (!categoria || c.dataset.categoria === categoria)
-                && (!autorId || String(c.dataset.autorId) === String(autorId));
+                && (!autorId || String(c.dataset.autorId) === String(autorId))
+                && (!disponibilidade || (disponibilidade === 'disponivel' ? c.dataset.disponivel === '1' : c.dataset.disponivel === '0'))
+                && (!destaque || (destaque === 'bestseller' ? c.dataset.bestseller === '1' : Number(c.dataset.reservas || 0) > 0));
             c.style.display = ok ? '' : 'none';
             if (ok) visibleSwiper++;
         });
@@ -235,25 +284,34 @@ document.addEventListener('DOMContentLoaded', () => {
             gridCards.filter(c => c.style.display !== 'none').sort((a, b) => {
                 if (sort === 'titulo_az') return a.dataset.titulo.localeCompare(b.dataset.titulo, 'pt-BR');
                 if (sort === 'titulo_za') return b.dataset.titulo.localeCompare(a.dataset.titulo, 'pt-BR');
+                if (sort === 'autor_az') return a.dataset.autorNome.localeCompare(b.dataset.autorNome, 'pt-BR');
                 if (sort === 'bestseller') return parseInt(b.dataset.bestseller) - parseInt(a.dataset.bestseller);
-                return b.dataset.data.localeCompare(a.dataset.data);
+                if (sort === 'disponiveis') return Number(b.dataset.quantidade || 0) - Number(a.dataset.quantidade || 0);
+                if (sort === 'mais_emprestados') return Number(b.dataset.emprestimos || 0) - Number(a.dataset.emprestimos || 0);
+                if (sort === 'mais_reservados') return Number(b.dataset.reservas || 0) - Number(a.dataset.reservas || 0);
+                return Number(b.dataset.data || 0) - Number(a.dataset.data || 0);
             }).forEach(c => grid.appendChild(c));
         }
         const visible = visibleGrid + visibleSwiper;
         if (countEl) countEl.textContent = `${visible.toLocaleString('pt-BR')} título${visible !== 1 ? 's' : ''}`;
         if (emptyEl) emptyEl.classList.toggle('hidden', visible !== 0);
-        if (clearBtn) clearBtn.classList.toggle('hidden', !(search || categoria || autorId));
+        if (clearBtn) {
+            clearBtn.classList.toggle('hidden', !hasFilters);
+            clearBtn.classList.toggle('inline-flex', hasFilters);
+        }
 
         if (chipsEl) chipsEl.innerHTML = '';
         const chips = [];
         if (search) chips.push({ label: `"${search}"`, clear: () => { document.getElementById('filter-search').value = ''; applyFilters(); } });
         if (categoria) chips.push({ label: categoria, clear: () => tsCategoria.setValue('') });
         if (autorId) chips.push({ label: tsAutor.getOption(autorId)?.textContent?.trim() || 'Autor', clear: () => tsAutor.setValue('') });
+        if (disponibilidade) chips.push({ label: disponibilidade === 'disponivel' ? 'Disponíveis' : 'Indisponíveis', clear: () => tsDisponibilidade.setValue('') });
+        if (destaque) chips.push({ label: destaque === 'bestseller' ? 'Destaques' : 'Com fila', clear: () => tsDestaque.setValue('') });
         if (chips.length && chipsEl) {
             chips.forEach(({ label, clear }) => {
                 const b = document.createElement('button');
-                b.className = 'inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-blue-900/30 border border-blue-700/50 text-blue-300 text-[10px] font-bold uppercase tracking-[.08em] hover:bg-blue-900/50 transition';
-                b.innerHTML = `<span>${label}</span><i class="ph ph-x text-[0.75rem] text-blue-400"></i>`;
+                b.className = 'inline-flex h-8 items-center gap-1.5 rounded-md border border-blue-200 bg-blue-50 px-3 text-[10px] font-black uppercase tracking-widest text-blue-700 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20';
+                b.innerHTML = `<span>${label}</span><i class="ph ph-x text-[0.75rem]"></i>`;
                 b.addEventListener('click', clear);
                 chipsEl.appendChild(b);
             });
@@ -270,6 +328,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (swiperBlock) swiperBlock.classList.toggle('hidden', visibleSwiper === 0);
     }
 
+    function setQuickButtonState() {
+        const disponibilidade = String(tsDisponibilidade.getValue() || '').trim();
+        const destaque = String(tsDestaque.getValue() || '').trim();
+        document.querySelectorAll('[data-quick-filter]').forEach(btn => {
+            const type = btn.getAttribute('data-quick-filter');
+            const active = (type === 'disponivel' && disponibilidade === 'disponivel')
+                || (type === 'bestseller' && destaque === 'bestseller')
+                || (type === 'fila' && destaque === 'fila');
+            btn.classList.toggle('ring-2', active);
+            btn.classList.toggle('ring-[#1E3A8A]', active);
+            btn.classList.toggle('ring-offset-2', active);
+            btn.classList.toggle('ring-offset-white', active);
+            btn.classList.toggle('dark:ring-offset-[#0d1420]', active);
+        });
+    }
+
     document.querySelectorAll('[data-cat-filter]').forEach(btn => {
         btn.addEventListener('click', () => {
             const categoria = btn.getAttribute('data-cat-filter') || '';
@@ -281,6 +355,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    document.querySelectorAll('[data-quick-filter]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const type = btn.getAttribute('data-quick-filter');
+            if (type === 'disponivel') {
+                tsDisponibilidade.setValue(tsDisponibilidade.getValue() === 'disponivel' ? '' : 'disponivel');
+            }
+            if (type === 'bestseller') {
+                tsDestaque.setValue(tsDestaque.getValue() === 'bestseller' ? '' : 'bestseller');
+            }
+            if (type === 'fila') {
+                tsDestaque.setValue(tsDestaque.getValue() === 'fila' ? '' : 'fila');
+            }
+            setQuickButtonState();
+            applyFilters();
+        });
+    });
+
     function clearAll() {
         const topFilter = document.getElementById('top-filter');
         if (topFilter) topFilter.value = '';
@@ -288,6 +379,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchEl) searchEl.value = '';
         if (typeof tsCategoria !== 'undefined' && tsCategoria) tsCategoria.setValue('');
         if (typeof tsAutor !== 'undefined' && tsAutor) tsAutor.setValue('');
+        if (typeof tsDisponibilidade !== 'undefined' && tsDisponibilidade) tsDisponibilidade.setValue('');
+        if (typeof tsDestaque !== 'undefined' && tsDestaque) tsDestaque.setValue('');
         if (typeof tsSort !== 'undefined' && tsSort) tsSort.setValue('recente');
         globalSearchPanel?.classList.add('hidden');
         applyFilters();
@@ -408,9 +501,12 @@ document.addEventListener('DOMContentLoaded', () => {
         globalSearchPanel.classList.add('hidden');
     });
 
-    if (typeof tsCategoria !== 'undefined' && tsCategoria) tsCategoria.on('change', applyFilters);
-    if (typeof tsAutor !== 'undefined' && tsAutor) tsAutor.on('change', applyFilters);
+    if (typeof tsCategoria !== 'undefined' && tsCategoria) tsCategoria.on('change', () => { setQuickButtonState(); applyFilters(); });
+    if (typeof tsAutor !== 'undefined' && tsAutor) tsAutor.on('change', () => { setQuickButtonState(); applyFilters(); });
+    if (typeof tsDisponibilidade !== 'undefined' && tsDisponibilidade) tsDisponibilidade.on('change', () => { setQuickButtonState(); applyFilters(); });
+    if (typeof tsDestaque !== 'undefined' && tsDestaque) tsDestaque.on('change', () => { setQuickButtonState(); applyFilters(); });
     if (typeof tsSort !== 'undefined' && tsSort) tsSort.on('change', () => {
+        setQuickButtonState();
         if (!acervoSection?.classList.contains('hidden')) applyFilters();
     });
 

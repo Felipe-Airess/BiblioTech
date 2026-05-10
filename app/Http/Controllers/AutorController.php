@@ -10,8 +10,50 @@ class AutorController extends Controller
 {
     public function index()
     {
-        $autores = Autor::all();
-        return view('admin.autores.index', compact('autores'));
+        $busca = trim((string) request('busca', ''));
+        $nacionalidade = request('nacionalidade', 'todas');
+        $ordem = request('ordem', 'nome');
+
+        $baseQuery = Autor::query()->withCount('livros');
+
+        $autores = (clone $baseQuery)
+            ->when($busca !== '', function ($query) use ($busca) {
+                $query->where(function ($subquery) use ($busca) {
+                    $subquery
+                        ->where('nome', 'like', "%{$busca}%")
+                        ->orWhere('nacionalidade', 'like', "%{$busca}%")
+                        ->orWhere('biografia', 'like', "%{$busca}%");
+                });
+            })
+            ->when($nacionalidade !== 'todas', fn ($query) => $query->where('nacionalidade', $nacionalidade))
+            ->when($ordem === 'mais_livros', fn ($query) => $query->orderByDesc('livros_count')->orderBy('nome'))
+            ->when($ordem === 'recentes', fn ($query) => $query->latest())
+            ->when($ordem === 'nome', fn ($query) => $query->orderBy('nome'))
+            ->paginate(12)
+            ->withQueryString();
+
+        $nacionalidades = Autor::query()
+            ->whereNotNull('nacionalidade')
+            ->where('nacionalidade', '!=', '')
+            ->orderBy('nacionalidade')
+            ->distinct()
+            ->pluck('nacionalidade');
+
+        $metricas = [
+            'total_autores' => Autor::count(),
+            'com_livros' => Autor::has('livros')->count(),
+            'sem_livros' => Autor::doesntHave('livros')->count(),
+            'total_livros_vinculados' => (int) Autor::withCount('livros')->get()->sum('livros_count'),
+        ];
+
+        return view('admin.autores.index', compact(
+            'autores',
+            'busca',
+            'nacionalidade',
+            'nacionalidades',
+            'ordem',
+            'metricas',
+        ));
     }
 
     public function create()
@@ -80,11 +122,20 @@ class AutorController extends Controller
 
     public function destroy($id)
     {
-        $autor = Autor::findOrFail($id);
+        $autor = Autor::withCount('livros')->findOrFail($id);
+
+        if ($autor->livros_count > 0) {
+            return redirect()
+                ->route('autores.index')
+                ->with('erro', 'Este autor ainda possui livros vinculados. Remova ou altere os livros antes de excluir.');
+        }
+
         if ($autor->foto) {
             Storage::disk('public')->delete($autor->foto);
         }
+
         $autor->delete();
+
         return redirect()->route('autores.index')->with('sucesso', 'Autor removido com sucesso!');
     }
 }

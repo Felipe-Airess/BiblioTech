@@ -4,7 +4,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Password Reset Language Lines
+    | Linhas de Redefinição de Senha
     |--------------------------------------------------------------------------
     |
     | As linhas abaixo são as mensagens padrão que devem ser usadas quando

@@ -264,7 +264,7 @@
                                                     {{ $atrasado ? 'Vencido' : ($risco === 'risco' ? 'Atenção' : 'No prazo') }}
                                                 </span>
                                             </div>
-                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $emprestimo->livro?->autor?->nome ?? 'Autor nao informado' }}</p>
+                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $emprestimo->livro?->autor?->nome ?? 'Autor não informado' }}</p>
                                         </div>
                                     </div>
 
@@ -315,7 +315,7 @@
                                     <div class="min-w-0">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-blue-700 dark:text-blue-300">{{ $livro->categoria ?? 'Acervo' }}</p>
                                         <h4 class="mt-1 line-clamp-2 text-sm font-black text-slate-950 group-hover:text-blue-800 dark:text-white dark:group-hover:text-blue-300">{{ $livro->titulo }}</h4>
-                                        <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor nao informado' }}</p>
+                                        <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor não informado' }}</p>
                                     </div>
                                 </a>
                             @empty
@@ -346,7 +346,7 @@
                                     </div>
                                     <div class="min-w-0">
                                         <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ $livro->titulo }}</p>
-                                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor nao informado' }}</p>
+                                        <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor não informado' }}</p>
                                     </div>
                                 </a>
                             @empty
@@ -386,7 +386,7 @@
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-bold text-slate-900 dark:text-white">{{ $reserva->livro?->titulo ?? 'Livro removido' }}</p>
-                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $reserva->livro?->autor?->nome ?? 'Autor nao informado' }}</p>
+                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $reserva->livro?->autor?->nome ?? 'Autor não informado' }}</p>
                                         </div>
                                         <span class="shrink-0 rounded-md border px-2 py-1 text-[9px] font-black uppercase tracking-widest {{ $reserva->status === \App\Models\Reserva::STATUS_ATIVA ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300' : 'border-slate-200 bg-white text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-300' }}">
                                             {{ $reserva->status === \App\Models\Reserva::STATUS_ATIVA ? 'Fila ' . ($reserva->posicao_fila ?? '--') : $reserva->status }}

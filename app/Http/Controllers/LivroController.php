@@ -13,6 +13,7 @@ use App\Models\Emprestimos;
 use App\Models\Membros;
 use App\Models\Reserva;
 use App\Models\Categoria;
+use App\Models\AuditLog;
 
 class LivroController extends Controller{
     public function dashboard()
@@ -28,6 +29,10 @@ class LivroController extends Controller{
                 ->groupBy('livro_id')
                 ->pluck('total', 'livro_id')
             : collect();
+
+        $emprestimosPorLivro = Emprestimos::select('livro_id', DB::raw('COUNT(*) as total'))
+            ->groupBy('livro_id')
+            ->pluck('total', 'livro_id');
 
         $livrosMaisReservados = $reservasPorLivro->isNotEmpty()
             ? Livros::with('autor')
@@ -64,16 +69,123 @@ class LivroController extends Controller{
             ->count();
 
         $emprestimosDoMembro = collect();
+        $reservasDoMembro = collect();
         $favoritosDoMembro = collect();
+        $alertasMembro = collect();
+        $metricasMembro = [
+            'ativos' => 0,
+            'vencendo_hoje' => 0,
+            'atrasados' => 0,
+            'reservas_ativas' => 0,
+            'favoritos' => 0,
+        ];
+
         if (auth()->guard('membro')->check()) {
+            $membroId = auth()->guard('membro')->id();
+
             $emprestimosDoMembro = Emprestimos::with('livro.autor')
-                ->where('membro_id', auth()->guard('membro')->id())
+                ->where('membro_id', $membroId)
                 ->whereIn('status', [
+                    Emprestimos::STATUS_APROVADO,
                     Emprestimos::STATUS_RETIRADO,
                     Emprestimos::STATUS_EM_USO,
+                    Emprestimos::STATUS_DEVOLUCAO_SOLICITADA,
                 ])
+                ->orderByRaw("FIELD(status, 'aprovado','devolucao_solicitada','retirado','em_uso')")
                 ->orderBy('data_devolucao_prevista')
+                ->take(4)
                 ->get();
+
+            $metricasMembro['ativos'] = Emprestimos::where('membro_id', $membroId)
+                ->whereIn('status', Emprestimos::STATUS_ATIVOS)
+                ->count();
+            $metricasMembro['vencendo_hoje'] = Emprestimos::where('membro_id', $membroId)
+                ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
+                ->whereDate('data_devolucao_prevista', today())
+                ->count();
+            $metricasMembro['atrasados'] = Emprestimos::where('membro_id', $membroId)
+                ->whereIn('status', Emprestimos::STATUS_EM_ANDAMENTO)
+                ->whereDate('data_devolucao_prevista', '<', today())
+                ->count();
+
+            if (Schema::hasTable('reservas')) {
+                $reservasDoMembro = Reserva::with('livro.autor')
+                    ->where('membro_id', $membroId)
+                    ->where('status', Reserva::STATUS_ATIVA)
+                    ->latest()
+                    ->take(3)
+                    ->get();
+
+                $metricasMembro['reservas_ativas'] = Reserva::ativas()
+                    ->where('membro_id', $membroId)
+                    ->count();
+            }
+
+            $aprovadosRetirada = Emprestimos::where('membro_id', $membroId)
+                ->where('status', Emprestimos::STATUS_APROVADO)
+                ->count();
+            $devolucoesSolicitadas = Emprestimos::where('membro_id', $membroId)
+                ->where('status', Emprestimos::STATUS_DEVOLUCAO_SOLICITADA)
+                ->count();
+            $multasPendentes = Emprestimos::where('membro_id', $membroId)
+                ->where('valor_multa', '>', 0)
+                ->whereNull('multa_paga_em')
+                ->count();
+
+            if ($metricasMembro['atrasados'] > 0) {
+                $alertasMembro->push([
+                    'tipo' => 'danger',
+                    'icone' => 'ph-warning-circle',
+                    'titulo' => 'Existe empréstimo em atraso',
+                    'texto' => 'Regularize a devolução para evitar novas multas e liberar próximas solicitações.',
+                    'acao' => 'Ver situação',
+                    'url' => route('membros.situacao'),
+                ]);
+            }
+
+            if ($multasPendentes > 0) {
+                $alertasMembro->push([
+                    'tipo' => 'danger',
+                    'icone' => 'ph-currency-circle-dollar',
+                    'titulo' => 'Multa pendente',
+                    'texto' => 'Procure a biblioteca para regularizar a pendência.',
+                    'acao' => 'Detalhes',
+                    'url' => route('membros.situacao'),
+                ]);
+            }
+
+            if ($metricasMembro['vencendo_hoje'] > 0) {
+                $alertasMembro->push([
+                    'tipo' => 'warning',
+                    'icone' => 'ph-calendar-check',
+                    'titulo' => 'Prazo vencendo hoje',
+                    'texto' => 'Confira seus empréstimos e solicite devolução se já terminou de usar o livro.',
+                    'acao' => 'Meus empréstimos',
+                    'url' => route('emprestimos.historico'),
+                ]);
+            }
+
+            if ($aprovadosRetirada > 0) {
+                $alertasMembro->push([
+                    'tipo' => 'info',
+                    'icone' => 'ph-bag',
+                    'titulo' => 'Livro aguardando retirada',
+                    'texto' => 'Seu pedido foi aprovado. Passe na biblioteca para retirar o exemplar.',
+                    'acao' => 'Ver pedidos',
+                    'url' => route('emprestimos.historico'),
+                ]);
+            }
+
+            if ($devolucoesSolicitadas > 0) {
+                $alertasMembro->push([
+                    'tipo' => 'info',
+                    'icone' => 'ph-arrow-u-up-left',
+                    'titulo' => 'Devolução solicitada',
+                    'texto' => 'Finalize a entrega no balcão para concluir o empréstimo.',
+                    'acao' => 'Acompanhar',
+                    'url' => route('emprestimos.historico'),
+                ]);
+            }
 
             if (Schema::hasTable('favoritos')) {
                 $favoritosDoMembro = auth()->guard('membro')->user()
@@ -82,6 +194,9 @@ class LivroController extends Controller{
                     ->orderByPivot('created_at', 'desc')
                     ->take(4)
                     ->get();
+                $metricasMembro['favoritos'] = auth()->guard('membro')->user()
+                    ->livrosFavoritos()
+                    ->count();
             }
         }
 
@@ -95,6 +210,7 @@ class LivroController extends Controller{
             'autores',
             'categoriasMaisAcessadas',
             'reservasPorLivro',
+            'emprestimosPorLivro',
             'livrosMaisReservados',
             'vitrinePrincipal',
             'vitrineNovidades',
@@ -103,8 +219,11 @@ class LivroController extends Controller{
             'emprestimosAtivos',
             'devolucoesVencidas',
             'emprestimosDoMembro',
+            'reservasDoMembro',
             'favoritosDoMembro',
-            'recomendados'
+            'recomendados',
+            'alertasMembro',
+            'metricasMembro'
         ));
     }
     /**
@@ -240,7 +359,11 @@ class LivroController extends Controller{
         }
 
        
-        Livros::create($dadosLivro);
+        $livro = Livros::create($dadosLivro);
+        AuditLog::record('livro_criado', "Cadastrou o livro {$livro->titulo}.", $livro, [
+            'isbn' => $livro->isbn,
+            'quantidade' => $livro->quantidade,
+        ]);
 
         return redirect()->back()->with('sucesso', 'Livro cadastrado com sucesso!');
     }
@@ -248,7 +371,12 @@ class LivroController extends Controller{
     public function destroy(Request $request, $id)
     {
         $livro = Livros::findOrFail($id);
+        $titulo = $livro->titulo;
         $livro->delete(); 
+        AuditLog::record('livro_excluido', "Removeu o livro {$titulo}.", null, [
+            'livro_id' => $id,
+            'titulo' => $titulo,
+        ]);
         return redirect()->back()->with('sucesso', 'Livro removido com sucesso!');
     }
 
@@ -316,6 +444,10 @@ class LivroController extends Controller{
 
         // 4. Salva as alterações
         $livro->update($dadosLivro);
+        AuditLog::record('livro_atualizado', "Atualizou o livro {$livro->titulo}.", $livro, [
+            'isbn' => $livro->isbn,
+            'quantidade' => $livro->quantidade,
+        ]);
 
         return redirect()->back()->with('sucesso', 'Livro atualizado com sucesso!');
     }

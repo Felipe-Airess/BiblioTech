@@ -3,7 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <title>Admin - Biblioteca</title>
+        <title>Administração - Biblioteca</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>

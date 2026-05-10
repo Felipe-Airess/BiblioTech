@@ -18,12 +18,16 @@
         $totalAutores       = $autores->count();
         $emprestimosAtivos  = \App\Models\Emprestimos::whereNull('data_devolucao_real')->count();
         $totalMembros       = \App\Models\Membros::count();
-        $nomeCompleto = auth()->check() ? (auth()->user()->name ?? auth()->user()->nome ?? 'Visitante') : 'Visitante';
+        $dashboardUser = auth()->user();
+        $dashboardMember = auth()->guard('membro')->user();
+        $currentPessoa = $dashboardMember ?: $dashboardUser;
+        $nomeCompleto = $currentPessoa ? ($currentPessoa->name ?? $currentPessoa->nome ?? 'Visitante') : 'Visitante';
         $primeiroNome = explode(' ', $nomeCompleto)[0];
         $iniciais = collect(explode(' ', $nomeCompleto))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('');
         $hora     = now()->hour;
         $saudacao = $hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite');
         $isAdmin  = auth()->check() && in_array(auth()->user()->tipo_usuario, ['gerente','bibliotecario']);
+        $isMember = auth()->guard('membro')->check();
         $categorias = $livros->pluck('categoria')->filter()->unique()->sort()->values();
         $notifiableTop = auth()->guard('membro')->check() ? auth()->guard('membro')->user() : auth()->user();
         $unreadCount = $notifiableTop ? $notifiableTop->unreadNotifications()->count() : 0;
@@ -93,13 +97,13 @@
                     @endif
                 </div>
 
-                @auth
+                @if($currentPessoa)
                 <div class="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-white/10">
                     <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E3A8A] to-blue-700 flex items-center justify-center ring-1 ring-blue-500/30 shrink-0">
                         <span class="text-white text-[10px] font-black tracking-tight select-none">{{ $iniciais }}</span>
                     </div>
                 </div>
-                @endauth
+                @endif
             </div>
         </div>
     </x-slot>
@@ -163,13 +167,21 @@
                             </div>
 
                             <p class="text-[10px] font-bold uppercase tracking-[.18em] text-blue-600 dark:text-blue-400 mb-1">
-                                Painel da biblioteca
+                                {{ $isAdmin ? 'Painel administrativo' : 'Sua biblioteca' }}
                             </p>
                             <h2 class="max-w-3xl text-2xl md:text-4xl font-black text-slate-950 dark:text-white font-serif leading-tight">
-                                {{ $primeiroNome }}, hoje o acervo pede atenção em circulação, prazos e fila de atendimento.
+                                @if($isAdmin)
+                                    {{ $primeiroNome }}, hoje o acervo pede atenção em circulação, prazos e fila de atendimento.
+                                @else
+                                    {{ $primeiroNome }}, encontre sua próxima leitura sem perder de vista seus prazos.
+                                @endif
                             </h2>
                             <p class="max-w-2xl text-sm md:text-base text-slate-600 dark:text-slate-400 mt-3 leading-relaxed">
-                                {{ $totalLivros }} títulos catalogados, {{ $totalMembros }} membros ativos no sistema e {{ $emprestimosAtivos }} empréstimos em acompanhamento agora.
+                                @if($isAdmin)
+                                    {{ $totalLivros }} títulos catalogados, {{ $totalMembros }} membros ativos no sistema e {{ $emprestimosAtivos }} empréstimos em acompanhamento agora.
+                                @else
+                                    {{ $totalLivros }} títulos disponíveis para explorar, favoritos para salvar e recomendações baseadas no seu jeito de ler.
+                                @endif
                             </p>
 
                             <div class="mt-6 flex flex-wrap gap-3">
@@ -187,6 +199,12 @@
                                         <i class="ph ph-books"></i>
                                         Explorar acervo
                                     </a>
+                                    @if($isMember)
+                                        <a href="{{ route('membros.situacao') }}" class="inline-flex items-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-blue-700 hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20 transition">
+                                            <i class="ph ph-user-focus"></i>
+                                            Minha situação
+                                        </a>
+                                    @endif
                                 @endif
                                 <a href="#acervo-section" class="inline-flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-[11px] font-black uppercase tracking-widest text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20 transition">
                                     <i class="ph ph-magnifying-glass"></i>
@@ -198,12 +216,13 @@
                         <div class="border-t border-slate-200 bg-slate-50/80 p-5 sm:p-6 dark:border-white/5 dark:bg-white/[.03] lg:border-l lg:border-t-0">
                             <div class="flex items-start justify-between gap-4">
                                 <div>
-                                    <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">Movimento de hoje</p>
-                                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">Resumo para priorizar a operação.</p>
+                                    <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">{{ $isAdmin ? 'Movimento de hoje' : 'Sua leitura agora' }}</p>
+                                    <p class="mt-1 text-sm text-slate-600 dark:text-slate-400">{{ $isAdmin ? 'Resumo para priorizar a operação.' : 'Resumo rápido do que merece sua atenção.' }}</p>
                                 </div>
                                 <i class="ph ph-chart-line-up text-2xl text-amber-600 dark:text-amber-400"></i>
                             </div>
 
+                            @if($isAdmin)
                             <div class="mt-5 grid grid-cols-2 gap-3">
                                 <div class="rounded-md border border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-[#0d1420]">
                                     <p class="text-[10px] uppercase tracking-widest text-slate-500 dark:text-slate-500">Novos hoje</p>
@@ -222,6 +241,26 @@
                                     <p class="mt-1 text-2xl font-black text-amber-800 dark:text-amber-300">{{ $solicitacoesPendentes }}</p>
                                 </div>
                             </div>
+                            @else
+                            <div class="mt-5 grid grid-cols-2 gap-3">
+                                <div class="rounded-md border border-blue-200 bg-blue-50 p-3 dark:border-blue-500/20 dark:bg-blue-500/10">
+                                    <p class="text-[10px] uppercase tracking-widest text-blue-700 dark:text-blue-300">Ativos</p>
+                                    <p class="mt-1 text-2xl font-black text-blue-800 dark:text-blue-300">{{ $metricasMembro['ativos'] }}</p>
+                                </div>
+                                <div class="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/20 dark:bg-amber-500/10">
+                                    <p class="text-[10px] uppercase tracking-widest text-amber-700 dark:text-amber-300">Reservas</p>
+                                    <p class="mt-1 text-2xl font-black text-amber-800 dark:text-amber-300">{{ $metricasMembro['reservas_ativas'] }}</p>
+                                </div>
+                                <div class="rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                                    <p class="text-[10px] uppercase tracking-widest text-emerald-700 dark:text-emerald-300">Favoritos</p>
+                                    <p class="mt-1 text-2xl font-black text-emerald-800 dark:text-emerald-300">{{ $metricasMembro['favoritos'] }}</p>
+                                </div>
+                                <div class="rounded-md border {{ $metricasMembro['atrasados'] > 0 ? 'border-red-200 bg-red-50 dark:border-red-500/20 dark:bg-red-500/10' : 'border-slate-200 bg-white dark:border-white/10 dark:bg-[#0d1420]' }} p-3">
+                                    <p class="text-[10px] uppercase tracking-widest {{ $metricasMembro['atrasados'] > 0 ? 'text-red-600 dark:text-red-300' : 'text-slate-500 dark:text-slate-500' }}">Atrasos</p>
+                                    <p class="mt-1 text-2xl font-black {{ $metricasMembro['atrasados'] > 0 ? 'text-red-700 dark:text-red-300' : 'text-slate-950 dark:text-white' }}">{{ $metricasMembro['atrasados'] }}</p>
+                                </div>
+                            </div>
+                            @endif
 
                             <div class="mt-4 rounded-md border border-slate-200 bg-white p-4 dark:border-white/10 dark:bg-[#0d1420]">
                                 <p class="text-[10px] font-black uppercase tracking-[.16em] text-slate-500 dark:text-slate-500">Sinal do acervo</p>
@@ -256,7 +295,7 @@
                                         @endif
                                         @if($vitrinePrincipal->e_bestseller)
                                             <span class="absolute left-3 top-3 rounded-md bg-[#F59E0B] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">
-                                                Bestseller
+                                                Destaque
                                             </span>
                                         @endif
                                     </div>
@@ -366,6 +405,136 @@
                 @endif
 
                 @if(auth()->guard('membro')->check())
+                    <section class="lg:col-span-3 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
+                        <div class="rounded-md border border-blue-200 bg-white p-5 dark:border-blue-500/20 dark:bg-[#0d1420]">
+                            <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-[.18em] text-blue-700 dark:text-blue-300">Meus pedidos</p>
+                                    <h3 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Empréstimos e reservas</h3>
+                                </div>
+                                <a href="{{ route('emprestimos.historico') }}" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 text-[10px] font-black uppercase tracking-widest text-blue-800 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20">
+                                    <i class="ph ph-clock-countdown"></i>
+                                    Histórico
+                                </a>
+                            </div>
+
+                            @if($emprestimosDoMembro->isEmpty() && $reservasDoMembro->isEmpty())
+                                <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400">
+                                    Você ainda não tem empréstimos ou reservas em andamento. Explore o acervo e solicite um livro quando encontrar algo interessante.
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                                    @foreach($emprestimosDoMembro as $emprestimo)
+                                        @php
+                                            $status = $emprestimo->status;
+                                            $statusLabel = [
+                                                \App\Models\Emprestimos::STATUS_APROVADO => 'Aguardando retirada',
+                                                \App\Models\Emprestimos::STATUS_RETIRADO => 'Retirado',
+                                                \App\Models\Emprestimos::STATUS_EM_USO => 'Em uso',
+                                                \App\Models\Emprestimos::STATUS_DEVOLUCAO_SOLICITADA => 'Devolução solicitada',
+                                            ][$status] ?? 'Em andamento';
+                                            $atrasado = $emprestimo->isAtrasado();
+                                            $venceHoje = $emprestimo->data_devolucao_prevista?->isToday();
+                                        @endphp
+                                        <article class="rounded-md border {{ $atrasado ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10' : ($venceHoje ? 'border-amber-200 bg-amber-50 dark:border-amber-500/30 dark:bg-amber-500/10' : 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[.03]') }} p-3">
+                                            <div class="flex gap-3">
+                                                <div class="h-16 w-11 shrink-0 overflow-hidden rounded bg-slate-200 dark:bg-white/10">
+                                                    @if($emprestimo->livro?->capa)
+                                                        <img src="{{ asset('storage/' . $emprestimo->livro->capa) }}" alt="{{ $emprestimo->livro?->titulo }}" class="h-full w-full object-cover">
+                                                    @else
+                                                        <div class="flex h-full w-full items-center justify-center">
+                                                            <i class="ph ph-book text-slate-400"></i>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="min-w-0 flex-1">
+                                                    <div class="flex flex-wrap items-center gap-2">
+                                                        <span class="rounded-md bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-700 dark:bg-[#0d1420] dark:text-slate-300">{{ $statusLabel }}</span>
+                                                        @if($atrasado)
+                                                            <span class="rounded-md bg-red-600 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-white">Atrasado</span>
+                                                        @elseif($venceHoje)
+                                                            <span class="rounded-md bg-amber-500 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-slate-950">Hoje</span>
+                                                        @endif
+                                                    </div>
+                                                    <a href="{{ route('livros.show', $emprestimo->livro_id) }}" class="mt-2 block truncate text-sm font-black text-slate-950 transition hover:text-blue-700 dark:text-white dark:hover:text-blue-300">{{ $emprestimo->livro?->titulo ?? 'Livro removido' }}</a>
+                                                    <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $emprestimo->livro?->autor?->nome ?? 'Autor não informado' }}</p>
+                                                    <p class="mt-2 text-xs font-bold text-slate-600 dark:text-slate-300">
+                                                        @if($status === \App\Models\Emprestimos::STATUS_APROVADO)
+                                                            Retire no balcão para iniciar o prazo.
+                                                        @else
+                                                            Prazo: {{ $emprestimo->data_devolucao_prevista?->format('d/m/Y') ?? 'a definir' }}
+                                                        @endif
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    @endforeach
+
+                                    @foreach($reservasDoMembro as $reserva)
+                                        <article class="rounded-md border border-emerald-200 bg-emerald-50 p-3 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                                            <div class="flex gap-3">
+                                                <div class="h-16 w-11 shrink-0 overflow-hidden rounded bg-white dark:bg-[#0d1420]">
+                                                    @if($reserva->livro?->capa)
+                                                        <img src="{{ asset('storage/' . $reserva->livro->capa) }}" alt="{{ $reserva->livro?->titulo }}" class="h-full w-full object-cover">
+                                                    @else
+                                                        <div class="flex h-full w-full items-center justify-center">
+                                                            <i class="ph ph-bookmark-simple text-emerald-500"></i>
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="min-w-0">
+                                                    <span class="rounded-md bg-white px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-emerald-700 dark:bg-[#0d1420] dark:text-emerald-300">Reserva ativa</span>
+                                                    <a href="{{ route('livros.show', $reserva->livro_id) }}" class="mt-2 block truncate text-sm font-black text-slate-950 transition hover:text-emerald-700 dark:text-white dark:hover:text-emerald-300">{{ $reserva->livro?->titulo ?? 'Livro removido' }}</a>
+                                                    <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $reserva->livro?->autor?->nome ?? 'Autor não informado' }}</p>
+                                                    <p class="mt-2 text-xs font-bold text-emerald-800 dark:text-emerald-200">A biblioteca avisará quando houver exemplar disponível.</p>
+                                                </div>
+                                            </div>
+                                        </article>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </div>
+
+                        <aside class="rounded-md border border-slate-200 bg-white p-5 dark:border-white/5 dark:bg-[#0d1420]">
+                            <div class="mb-4 flex items-center justify-between gap-3">
+                                <div>
+                                    <p class="text-[10px] font-black uppercase tracking-[.18em] text-amber-700 dark:text-amber-300">Alertas</p>
+                                    <h3 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">O que precisa de atenção</h3>
+                                </div>
+                                <i class="ph ph-bell-ringing text-xl text-amber-600 dark:text-amber-400"></i>
+                            </div>
+
+                            @if($alertasMembro->isEmpty())
+                                <div class="rounded-md border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-500/30 dark:bg-emerald-500/10">
+                                    <p class="text-sm font-black text-emerald-800 dark:text-emerald-200">Tudo tranquilo por aqui.</p>
+                                    <p class="mt-1 text-xs leading-relaxed text-emerald-700/80 dark:text-emerald-100/70">Sem atrasos, multas ou retiradas pendentes no momento.</p>
+                                </div>
+                            @else
+                                <div class="space-y-3">
+                                    @foreach($alertasMembro->take(4) as $alerta)
+                                        @php
+                                            $alertClass = $alerta['tipo'] === 'danger'
+                                                ? 'border-red-200 bg-red-50 text-red-800 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-200'
+                                                : ($alerta['tipo'] === 'warning'
+                                                    ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-100'
+                                                    : 'border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-200');
+                                        @endphp
+                                        <a href="{{ $alerta['url'] }}" class="block rounded-md border p-3 transition hover:translate-x-0.5 {{ $alertClass }}">
+                                            <div class="flex gap-3">
+                                                <i class="ph {{ $alerta['icone'] }} mt-0.5 text-lg"></i>
+                                                <div>
+                                                    <p class="text-sm font-black">{{ $alerta['titulo'] }}</p>
+                                                    <p class="mt-1 text-xs leading-relaxed opacity-80">{{ $alerta['texto'] }}</p>
+                                                    <p class="mt-2 text-[10px] font-black uppercase tracking-widest">{{ $alerta['acao'] }}</p>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                        </aside>
+                    </section>
+
                     <section class="lg:col-span-3 rounded-md border border-amber-200 bg-white p-5 dark:border-amber-500/20 dark:bg-[#0d1420]">
                         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -397,7 +566,7 @@
                                         </div>
                                         <div class="min-w-0">
                                             <p class="truncate text-sm font-bold text-slate-900 group-hover:text-amber-800 dark:text-white dark:group-hover:text-amber-300">{{ $livro->titulo }}</p>
-                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor nao informado' }}</p>
+                                            <p class="truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor não informado' }}</p>
                                         </div>
                                     </a>
                                 @endforeach
@@ -408,8 +577,8 @@
                     <section class="lg:col-span-3 rounded-md border border-blue-200 bg-white p-5 dark:border-blue-500/20 dark:bg-[#0d1420]">
                         <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p class="text-[10px] font-black uppercase tracking-[.18em] text-blue-700 dark:text-blue-300">Sugestões para voce</p>
-                                <h3 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Proxima leitura</h3>
+                                <p class="text-[10px] font-black uppercase tracking-[.18em] text-blue-700 dark:text-blue-300">Sugestões para você</p>
+                                <h3 class="text-sm font-black uppercase tracking-widest text-slate-900 dark:text-white">Próxima leitura</h3>
                             </div>
                             <a href="#acervo-section" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-blue-300 bg-blue-50 px-3 text-[10px] font-black uppercase tracking-widest text-blue-800 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20">
                                 <i class="ph ph-compass"></i>
@@ -419,7 +588,7 @@
 
                         @if($recomendados->isEmpty())
                             <div class="rounded-md border border-dashed border-slate-300 bg-slate-50 p-5 text-sm text-slate-500 dark:border-white/10 dark:bg-white/[.03] dark:text-slate-400">
-                                As sugestões aparecem quando voce pega livros emprestados ou salva títulos em Favoritos.
+                                As sugestões aparecem quando você pega livros emprestados ou salva títulos em Favoritos.
                             </div>
                         @else
                             <div class="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -438,12 +607,12 @@
                                             <div class="mb-2 flex flex-wrap gap-1.5">
                                                 <span class="rounded-md bg-blue-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-blue-800 dark:bg-blue-500/10 dark:text-blue-300">{{ $livro->categoria ?? 'Acervo' }}</span>
                                                 @if($livro->e_bestseller)
-                                                    <span class="rounded-md bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Bestseller</span>
+                                                    <span class="rounded-md bg-amber-100 px-2 py-0.5 text-[9px] font-black uppercase tracking-widest text-amber-800 dark:bg-amber-500/10 dark:text-amber-300">Destaque</span>
                                                 @endif
                                             </div>
                                             <p class="line-clamp-2 text-sm font-black leading-tight text-slate-950 group-hover:text-blue-800 dark:text-white dark:group-hover:text-blue-300">{{ $livro->titulo }}</p>
-                                            <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor nao informado' }}</p>
-                                            <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $livro->sinopse ?: 'Uma sugestao do acervo baseada no seu perfil de leitura.' }}</p>
+                                            <p class="mt-1 truncate text-xs text-slate-500 dark:text-slate-400">{{ $livro->autor->nome ?? 'Autor não informado' }}</p>
+                                            <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">{{ $livro->sinopse ?: 'Uma sugestão do acervo baseada no seu perfil de leitura.' }}</p>
                                         </div>
                                     </a>
                                 @endforeach
@@ -614,7 +783,7 @@
                         </div>
                     @else
                         <div class="text-center py-6 text-slate-500 dark:text-gray-500 text-sm">
-                            Ainda nao ha acessos suficientes.
+                            Ainda não há acessos suficientes.
                         </div>
                     @endif
                 </div>
@@ -649,7 +818,7 @@
                             </div>
                             <a href="{{ route('autores.show', $autor->id) }}" class="flex-grow flex flex-col">
                                 <h4 class="text-slate-900 dark:text-white font-bold text-sm tracking-tight mt-1 group-hover:text-blue-400 transition-colors">{{ $autor->nome }}</h4>
-                                <p class="text-[10px] uppercase tracking-widest text-slate-600 dark:text-gray-600 mt-0.5 mb-2">{{ $autor->nacionalidade ?? 'N/A' }}</p>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-600 dark:text-gray-600 mt-0.5 mb-2">{{ $autor->nacionalidade ?? 'Não informado' }}</p>
                                 <p class="text-slate-600 dark:text-gray-500 text-xs line-clamp-3 leading-relaxed px-1">{{ Str::limit($autor->biografia ?? 'Biografia não cadastrada.', 90) }}</p>
                             </a>
                             <div class="mt-3 pt-3 border-t border-slate-200 dark:border-white/5 flex items-center justify-between shrink-0">
@@ -702,23 +871,42 @@
                 </div>
             </div>
 
-            <div class="mb-8 p-4 sm:p-5 bg-white/95 dark:bg-[#0d1420]/90 rounded-md border border-slate-200 dark:border-white/[.06] shadow-sm relative z-20" id="filter-bar">
-                <div class="absolute inset-0 pointer-events-none">
-                    <i class="ph ph-book-open absolute left-6 top-4 text-2xl text-slate-200/60 dark:text-white/5"></i>
-                    <i class="ph ph-book-open-text absolute right-10 top-6 text-xl text-slate-200/50 dark:text-white/5"></i>
-                    <i class="ph ph-books absolute left-10 bottom-6 text-3xl text-slate-200/50 dark:text-white/5"></i>
-                    <i class="ph ph-bookmark absolute right-16 bottom-5 text-2xl text-slate-200/50 dark:text-white/5"></i>
-                </div>
-                <div class="relative z-20 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div class="sm:col-span-2 lg:col-span-1">
-                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-slate-500 mb-1.5" for="filter-search">Buscar</label>
-                        <div class="relative flex items-center">
-                            <i class="ph ph-magnifying-glass absolute left-2.5 text-base text-slate-600 pointer-events-none z-10"></i>
-                            <input type="text" id="filter-search" placeholder="Título, autor..." class="w-full bg-white dark:bg-[#080d14] border border-slate-200 dark:border-white/10 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 rounded-lg py-2 pl-8 pr-3 text-[13px] transition focus:border-[#1E3A8A] focus:ring-2 focus:ring-[#1E3A8A]/25 outline-none" autocomplete="off">
+            <div class="mb-8 overflow-hidden rounded-md border border-slate-200 bg-white/95 shadow-sm dark:border-white/[.06] dark:bg-[#0d1420]/95" id="filter-bar">
+                <div class="border-b border-slate-200 bg-slate-50/80 p-4 dark:border-white/10 dark:bg-white/[.03] sm:p-5">
+                    <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-[.18em] text-emerald-700 dark:text-emerald-300">Busca refinada</p>
+                            <h3 class="mt-1 font-serif text-xl font-black text-slate-950 dark:text-white">Encontre o livro certo</h3>
+                            <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Combine título, autor, categoria, disponibilidade e demanda da fila.</p>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <button type="button" data-quick-filter="disponivel" class="inline-flex h-9 items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 text-[10px] font-black uppercase tracking-widest text-emerald-700 transition hover:bg-emerald-100 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300 dark:hover:bg-emerald-500/20">
+                                <i class="ph ph-check-circle"></i>
+                                Disponíveis
+                            </button>
+                            <button type="button" data-quick-filter="bestseller" class="inline-flex h-9 items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 text-[10px] font-black uppercase tracking-widest text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20">
+                                <i class="ph ph-star"></i>
+                                Destaques
+                            </button>
+                            <button type="button" data-quick-filter="fila" class="inline-flex h-9 items-center gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 text-[10px] font-black uppercase tracking-widest text-blue-700 transition hover:bg-blue-100 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300 dark:hover:bg-blue-500/20">
+                                <i class="ph ph-bookmark-simple"></i>
+                                Com fila
+                            </button>
                         </div>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-slate-500 mb-1.5" for="filter-categoria">Categoria</label>
+                </div>
+
+                <div class="p-4 sm:p-5">
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-12">
+                    <div class="sm:col-span-2 xl:col-span-4">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-search">Buscar</label>
+                        <div class="relative flex items-center">
+                            <i class="ph ph-magnifying-glass pointer-events-none absolute left-3 z-10 text-base text-slate-400"></i>
+                            <input type="text" id="filter-search" placeholder="Título ou autor..." class="h-11 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 outline-none transition focus:border-[#1E3A8A] focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200" autocomplete="off">
+                        </div>
+                    </div>
+                    <div class="xl:col-span-2">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-categoria">Categoria</label>
                         <select id="filter-categoria" placeholder="Todas...">
                             <option value="">Todas as categorias</option>
                             @foreach($categorias as $cat)
@@ -726,8 +914,8 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-slate-500 mb-1.5" for="filter-autor">Autor</label>
+                    <div class="xl:col-span-2">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-autor">Autor</label>
                         <select id="filter-autor" placeholder="Todos...">
                             <option value="">Todos os autores</option>
                             @foreach($autores as $autor)
@@ -735,36 +923,61 @@
                             @endforeach
                         </select>
                     </div>
-                    <div>
-                        <label class="block text-[10px] font-bold uppercase tracking-[.12em] text-slate-500 mb-1.5" for="filter-sort">Ordenar por</label>
+                    <div class="xl:col-span-1">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-disponibilidade">Status</label>
+                        <select id="filter-disponibilidade">
+                            <option value="">Todos</option>
+                            <option value="disponivel">Disponíveis</option>
+                            <option value="indisponivel">Indisponíveis</option>
+                        </select>
+                    </div>
+                    <div class="xl:col-span-1">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-destaque">Sinal</label>
+                        <select id="filter-destaque">
+                            <option value="">Todos</option>
+                            <option value="bestseller">Destaques</option>
+                            <option value="fila">Com fila</option>
+                        </select>
+                    </div>
+                    <div class="xl:col-span-2">
+                        <label class="mb-1.5 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400" for="filter-sort">Ordenar por</label>
                         <select id="filter-sort">
                             <option value="recente">Mais Recentes</option>
                             <option value="titulo_az">Título A → Z</option>
                             <option value="titulo_za">Título Z → A</option>
-                            <option value="bestseller">Bestsellers</option>
+                            <option value="autor_az">Autor A → Z</option>
+                            <option value="disponiveis">Mais disponíveis</option>
+                            <option value="bestseller">Destaques</option>
+                            <option value="mais_emprestados">Mais emprestados</option>
+                            <option value="mais_reservados">Mais reservados</option>
                         </select>
                     </div>
                 </div>
-                <div id="active-filters" class="mt-4 flex flex-wrap gap-2 relative z-20 hidden"></div>
-                <div class="relative z-20 mt-4 flex justify-end">
-                    <button id="clear-all-btn" class="hidden inline-flex items-center gap-1.5 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-red-600 transition hover:bg-red-100 dark:border-red-500/25 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20">
+                <div class="mt-4 flex flex-col gap-3 border-t border-slate-200 pt-4 dark:border-white/10 sm:flex-row sm:items-center sm:justify-between">
+                    <div id="active-filters" class="flex flex-wrap gap-2 hidden"></div>
+                    <button id="clear-all-btn" class="hidden h-9 items-center justify-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
                         <i class="ph ph-x"></i>
                         Limpar filtros
                     </button>
+                </div>
                 </div>
             </div>
 
             {{-- Prateleira principal --}}
             <div class="space-y-6">
                 <div id="acervo-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                    @foreach($livros->take(8) as $livro)
+                    @foreach($livros as $livro)
                     <div class="book-card acervo-card group bg-white dark:bg-[#0d1420] rounded-md overflow-hidden border border-slate-200 dark:border-white/5 hover:border-emerald-500/40 transition-[opacity,transform,border-color,box-shadow] duration-200 flex flex-col shadow-sm hover:shadow-lg hover:shadow-slate-950/10"
                          data-titulo="{{ strtolower($livro->titulo) }}"
                          data-autor-nome="{{ strtolower($livro->autor->nome ?? '') }}"
                          data-autor-id="{{ $livro->autor_id }}"
                          data-categoria="{{ $livro->categoria ?? 'Geral' }}"
                          data-bestseller="{{ $livro->e_bestseller ? '1' : '0' }}"
-                         data-data="{{ $livro->data_publicacao ?? '0000-00-00' }}">
+                         data-disponivel="{{ (int) $livro->quantidade > 0 ? '1' : '0' }}"
+                         data-quantidade="{{ (int) $livro->quantidade }}"
+                         data-reservas="{{ (int) ($reservasPorLivro[$livro->id] ?? 0) }}"
+                         data-emprestimos="{{ (int) ($emprestimosPorLivro[$livro->id] ?? 0) }}"
+                         data-data="{{ $livro->created_at?->timestamp ?? 0 }}">
                         <a href="{{ route('livros.show', $livro->id) }}" class="flex-grow flex flex-col">
                             <div class="relative h-64 overflow-hidden bg-slate-100 dark:bg-[#080d14]">
                                 @if($livro->capa)
@@ -774,7 +987,7 @@
                                 @endif
                                 <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/70 to-transparent"></div>
                                 @if($livro->e_bestseller)
-                                <div class="absolute top-3 left-3 px-2 py-1 rounded-md bg-amber-500 text-slate-900 text-[9px] font-black uppercase tracking-[.08em]">Bestseller</div>
+                                <div class="absolute top-3 left-3 px-2 py-1 rounded-md bg-amber-500 text-slate-900 text-[9px] font-black uppercase tracking-[.08em]">Destaque</div>
                                 @endif
                                 @if(($reservasPorLivro[$livro->id] ?? 0) > 0)
                                     <div class="absolute top-3 right-3 px-2 py-1 rounded-md bg-white/90 text-amber-800 text-[9px] font-black uppercase tracking-[.08em]">
@@ -804,54 +1017,6 @@
                     </div>
                     @endforeach
                 </div>
-
-                {{-- Swiper para livros além dos 8 primeiros --}}
-                @if($livros->count() > 8)
-                <div id="swiper-acervo-block">
-                    <div class="flex items-center justify-between mb-3">
-                        <div class="flex items-center gap-2">
-                            <button id="swiper-acervo-prev" class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white dark:bg-white/5 dark:border-white/10 dark:text-gray-400 transition-all" aria-label="Anterior">
-                                <i class="ph ph-caret-left"></i>
-                            </button>
-                            <button id="swiper-acervo-next" class="w-8 h-8 shrink-0 rounded-lg flex items-center justify-center bg-white border border-slate-200 text-slate-500 hover:bg-[#2563EB] hover:border-[#2563EB] hover:text-white dark:bg-white/5 dark:border-white/10 dark:text-gray-400 transition-all" aria-label="Proximo">
-                                <i class="ph ph-caret-right"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="swiper overflow-hidden" id="swiper-acervo">
-                        <div class="swiper-wrapper flex items-stretch">
-                            @foreach($livros->slice(8) as $livro)
-                            <div class="swiper-slide h-auto shrink-0 !w-36 sm:!w-40 lg:!w-44 acervo-carousel-card"
-                                 data-titulo="{{ strtolower($livro->titulo) }}"
-                                 data-autor-nome="{{ strtolower($livro->autor->nome ?? '') }}"
-                                 data-autor-id="{{ $livro->autor_id }}"
-                                 data-categoria="{{ $livro->categoria ?? 'Geral' }}"
-                                 data-bestseller="{{ $livro->e_bestseller ? '1' : '0' }}"
-                                 data-data="{{ $livro->data_publicacao ?? '0000-00-00' }}">
-                                <a href="{{ route('livros.show', $livro->id) }}" class="group block h-full">
-                                    <div class="relative w-full h-52 rounded-xl overflow-hidden bg-slate-100 dark:bg-white/10">
-                                        @if($livro->capa)
-                                            <img src="{{ asset('storage/' . $livro->capa) }}" alt="{{ $livro->titulo }}" class="w-full h-full object-cover">
-                                        @else
-                                            <div class="w-full h-full flex items-center justify-center">
-                                                <i class="ph ph-book text-2xl text-slate-400"></i>
-                                            </div>
-                                        @endif
-                                        <div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
-                                            <span class="px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-widest bg-white text-slate-900">Ver mais</span>
-                                        </div>
-                                    </div>
-                                    <div class="mt-2">
-                                        <p class="text-xs font-semibold text-slate-900 dark:text-white truncate">{{ $livro->titulo }}</p>
-                                        <p class="text-[10px] text-slate-500 dark:text-gray-500 truncate">{{ $livro->autor->nome ?? '' }}</p>
-                                    </div>
-                                </a>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                </div>
-                @endif
 
             {{-- Empty state --}}
                 <div id="empty-state" class="hidden rounded-md border border-slate-200 bg-white/90 p-8 text-center dark:border-white/[.06] dark:bg-[#0d1420]/90">
@@ -992,6 +1157,59 @@
     <style>
         .ts-dropdown {
             z-index: 1000 !important;
+        }
+        .ts-wrapper .ts-control {
+            min-height: 44px !important;
+            border-radius: 6px !important;
+            border-color: rgb(226 232 240) !important;
+            background: #ffffff !important;
+            color: rgb(30 41 59) !important;
+            box-shadow: none !important;
+            padding: 8px 12px !important;
+        }
+        .ts-wrapper.focus .ts-control {
+            border-color: #1E3A8A !important;
+            box-shadow: 0 0 0 3px rgba(30, 58, 138, .18) !important;
+        }
+        .ts-wrapper .ts-control input {
+            color: rgb(30 41 59) !important;
+        }
+        .ts-dropdown {
+            border-color: rgb(226 232 240) !important;
+            background: #ffffff !important;
+            color: rgb(30 41 59) !important;
+            box-shadow: 0 18px 40px rgba(15, 23, 42, .12) !important;
+        }
+        .ts-dropdown .option {
+            color: rgb(51 65 85) !important;
+            padding: 9px 12px !important;
+        }
+        .ts-dropdown .option.active,
+        .ts-dropdown .option:hover {
+            background: rgb(239 246 255) !important;
+            color: #1E3A8A !important;
+        }
+        .dark .ts-wrapper .ts-control {
+            border-color: rgba(255,255,255,.10) !important;
+            background: #080d14 !important;
+            color: rgb(226 232 240) !important;
+        }
+        .dark .ts-wrapper .ts-control input {
+            color: rgb(226 232 240) !important;
+        }
+        .dark .ts-dropdown {
+            border-color: rgba(255,255,255,.10) !important;
+            background: #080d14 !important;
+            color: rgb(226 232 240) !important;
+            box-shadow: 0 24px 48px rgba(0,0,0,.45) !important;
+        }
+        .dark .ts-dropdown .option {
+            color: rgb(203 213 225) !important;
+        }
+        .dark .ts-dropdown .option.active,
+        .dark .ts-dropdown .option:hover {
+            background: rgba(30, 58, 138, .36) !important;
+            color: #ffffff !important;
         }
     </style>
     

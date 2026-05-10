@@ -15,6 +15,9 @@ use App\Http\Controllers\CategoriaController;
 use App\Http\Controllers\FavoritoController;
 use App\Http\Controllers\MinhaBibliotecaController;
 use App\Http\Controllers\CarteirinhaController;
+use App\Http\Controllers\MultaController;
+use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\OperacaoController;
 use Illuminate\Support\Facades\Schedule;
 
 Route::get('/', function () {
@@ -32,6 +35,7 @@ Schedule::command('emprestimos:lembrar')->dailyAt('08:00');
     Route::delete('/admin/livros/{id}', [LivroController::class, 'destroy'])->name('livros.destroy')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/livros/{id}/editar', [LivroController::class, 'edit'])->name('livros.edit')->middleware('tipo:gerente,bibliotecario');
     Route::put('/admin/livros/{id}', [LivroController::class, 'update'])->name('livros.update')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/operacao', [OperacaoController::class, 'index'])->name('admin.operacao.index')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/emprestimos', [EmprestimoAdminController::class, 'index'])->name('admin.emprestimos.index')->middleware('tipo:gerente,bibliotecario');
     Route::post('/admin/emprestimos/{id}/devolver', [EmprestimoAdminController::class, 'devolver'])->name('admin.emprestimos.devolver')->middleware('tipo:gerente,bibliotecario');
     Route::post('/admin/emprestimos/{id}/aprovar', [EmprestimoAdminController::class, 'aprovar'])->name('admin.emprestimos.aprovar')->middleware('tipo:gerente,bibliotecario');
@@ -58,7 +62,7 @@ Route::post('/membros/salvar', [MembrosController::class, 'store'])->name('membr
 Route::get('/admin/membros/{membro}/editar', [MembrosController::class, 'edit'])->name('membros.edit')->middleware('tipo:gerente,bibliotecario');
 Route::put('/admin/membros/{membro}', [MembrosController::class, 'update'])->name('membros.update')->middleware('tipo:gerente,bibliotecario');
 
-Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->name('livros.alugar'); // Só membros podem alugar livros
+Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->middleware('auth:membro')->name('livros.alugar'); // Só membros podem alugar livros
 Route::post('/livros/{id}/reservar', [EmprestimoController::class, 'reservar'])->middleware('auth:membro')->name('livros.reservar');
 Route::post('/livros/{livro}/favorito', [FavoritoController::class, 'toggle'])->middleware('auth:membro')->name('livros.favorito.toggle');
 Route::get('/livros/{id}', [LivroController::class, 'show'])->name('livros.show'); // Rotas públicas para listar e ver detalhes dos livros
@@ -114,6 +118,9 @@ Route::get('/dashboard', [LivroController::class, 'dashboard'])
     Route::get('/minha-biblioteca', [MinhaBibliotecaController::class, 'index'])
         ->middleware('auth:membro')
         ->name('membros.biblioteca');
+    Route::get('/minha-situacao', [MinhaBibliotecaController::class, 'situacao'])
+        ->middleware('auth:membro')
+        ->name('membros.situacao');
     Route::get('/minha-carteirinha', [CarteirinhaController::class, 'show'])
         ->middleware('auth:membro')
         ->name('membros.carteirinha');
@@ -125,8 +132,15 @@ Route::get('/dashboard', [LivroController::class, 'dashboard'])
     Route::get('/admin/membros/perfis', [App\Http\Controllers\PerfilMembrosController::class, 'index'])->name('admin.membros.perfis')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/membros/{membro}', [App\Http\Controllers\PerfilMembrosController::class, 'show'])->name('admin.membros.show')->middleware('tipo:gerente,bibliotecario');
     Route::post('/admin/membros/{membro}/message', [App\Http\Controllers\PerfilMembrosController::class, 'sendMessage'])->name('admin.membros.message')->middleware('tipo:gerente,bibliotecario');
+    Route::put('/admin/membros/{membro}/senha', [App\Http\Controllers\PerfilMembrosController::class, 'resetPassword'])->name('admin.membros.password')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/relatorios', [RelatorioController::class, 'index'])->name('admin.relatorios.index')->middleware('tipo:gerente,bibliotecario');
     Route::get('/admin/relatorios/pdf', [RelatorioController::class, 'exportarPdf'])->name('admin.relatorios.pdf')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/multas', [MultaController::class, 'index'])->name('admin.multas.index')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/multas/pdf', [MultaController::class, 'exportarPdf'])->name('admin.multas.pdf')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/multas/csv', [MultaController::class, 'exportarCsv'])->name('admin.multas.csv')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/auditoria', [AuditLogController::class, 'index'])->name('admin.auditoria.index')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/auditoria/pdf', [AuditLogController::class, 'exportarPdf'])->name('admin.auditoria.pdf')->middleware('tipo:gerente,bibliotecario');
+    Route::get('/admin/auditoria/csv', [AuditLogController::class, 'exportarCsv'])->name('admin.auditoria.csv')->middleware('tipo:gerente,bibliotecario');
 
 require __DIR__.'/auth.php';
 
@@ -135,4 +149,6 @@ use App\Http\Controllers\NotificationController;
 Route::middleware(['auth:web,membro'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/mark-read', [NotificationController::class, 'markAllRead'])->name('notifications.mark-read');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::delete('/notifications/read', [NotificationController::class, 'clearRead'])->name('notifications.clear-read');
 });

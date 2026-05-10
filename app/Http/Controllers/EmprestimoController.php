@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use App\Notifications\DevolucaoSolicitada;
 use App\Notifications\EmprestimoSolicitado;
+use App\Notifications\ReservaCancelada;
+use App\Notifications\ReservaRegistrada;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -80,6 +82,21 @@ class EmprestimoController extends Controller
         // 4. Verifica o estoque
         if ($livro->quantidade <= 0) {
             return redirect()->back()->with('erro', 'Putz! Esse livro está fora de estoque no momento.');
+        }
+
+        $reservasAtivas = Reserva::ativas()
+            ->where('livro_id', $livro->id)
+            ->orderBy('created_at')
+            ->get();
+
+        if ($reservasAtivas->isNotEmpty()) {
+            $primeiraReserva = $reservasAtivas->first();
+
+            if ((int) $primeiraReserva->membro_id !== (int) $membro->id) {
+                return redirect()->back()->with('erro', 'Este livro possui fila de reserva ativa. Aguarde a biblioteca atender a fila.');
+            }
+
+            return redirect()->back()->with('erro', 'Sua reserva é a primeira da fila. Aguarde a biblioteca liberar o empréstimo pelo atendimento.');
         }
 
         // 5. Cria o registro usando os nomes exatos da sua migration
@@ -154,16 +171,24 @@ class EmprestimoController extends Controller
             return redirect()->back()->with('erro', 'Regularize empréstimos vencidos ou multas antes de entrar na fila.');
         }
 
-        Reserva::create([
+        $reserva = Reserva::create([
             'membro_id' => $membro->id,
             'livro_id' => $livro->id,
             'status' => Reserva::STATUS_ATIVA,
         ]);
 
+        $reserva->load(['livro', 'membro']);
+
         $posicao = Reserva::ativas()
             ->where('livro_id', $livro->id)
             ->where('created_at', '<=', now())
             ->count();
+
+        User::whereIn('tipo_usuario', ['gerente', 'bibliotecario'])
+            ->get()
+            ->each(function (User $admin) use ($reserva) {
+                $admin->notify(new ReservaRegistrada($reserva));
+            });
 
         return redirect()->back()->with('sucesso', "Reserva registrada. Você entrou na posição {$posicao} da fila.");
     }
@@ -177,10 +202,18 @@ class EmprestimoController extends Controller
             ->where('membro_id', $membro->id)
             ->firstOrFail();
 
+        $reserva->load(['livro', 'membro']);
+
         $reserva->update([
             'status' => Reserva::STATUS_CANCELADA,
             'cancelada_em' => now(),
         ]);
+
+        User::whereIn('tipo_usuario', ['gerente', 'bibliotecario'])
+            ->get()
+            ->each(function (User $admin) use ($reserva) {
+                $admin->notify(new ReservaCancelada($reserva));
+            });
 
         return redirect()->back()->with('sucesso', 'Reserva cancelada com sucesso.');
     }

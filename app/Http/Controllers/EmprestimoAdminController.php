@@ -8,6 +8,8 @@ use App\Models\Reserva;
 use App\Notifications\EmprestimoRejeitado;
 use App\Notifications\EmprestimoAprovado;
 use App\Notifications\EmprestimoRetirado;
+use App\Notifications\ReservaDisponivel;
+use App\Models\AuditLog;
 use Carbon\Carbon;
 
 class EmprestimoAdminController extends Controller
@@ -65,6 +67,10 @@ class EmprestimoAdminController extends Controller
 
         // 4. Devolve o livro para a prateleira (Aumenta a quantidade do estoque em +1)
         $emprestimo->livro->increment('quantidade');
+        AuditLog::record('emprestimo_devolvido', "Registrou devolução do livro {$emprestimo->livro?->titulo}.", $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+            'multa' => $valorMulta,
+        ]);
 
         // 5. Prepara a mensagem de sucesso (Avisa se teve multa)
         $mensagem = 'Livro devolvido com sucesso!';
@@ -96,6 +102,9 @@ class EmprestimoAdminController extends Controller
         if ($emprestimo->livro) {
             $emprestimo->livro->decrement('quantidade');
         }
+        AuditLog::record('emprestimo_aprovado', "Aprovou solicitação de empréstimo do livro {$emprestimo->livro?->titulo}.", $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+        ]);
 
         // Notifica o membro sobre aprovação
         if ($emprestimo->membro) {
@@ -126,6 +135,10 @@ class EmprestimoAdminController extends Controller
         if ($emprestimo->membro) {
             $emprestimo->membro->notify(new EmprestimoRetirado($emprestimo));
         }
+        AuditLog::record('emprestimo_retirado', "Confirmou retirada do livro {$emprestimo->livro?->titulo}.", $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+            'prazo' => $emprestimo->data_devolucao_prevista?->format('d/m/Y'),
+        ]);
 
         return redirect()->back()->with('sucesso', "Retirada confirmada. Prazo de {$prazoDias} dias aplicado automaticamente.");
     }
@@ -140,6 +153,9 @@ class EmprestimoAdminController extends Controller
 
         $emprestimo->update([
             'status' => Emprestimos::STATUS_EM_USO,
+        ]);
+        AuditLog::record('emprestimo_em_uso', 'Marcou empréstimo como em uso.', $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
         ]);
 
         return redirect()->back()->with('sucesso', 'Empréstimo marcado como em uso.');
@@ -156,6 +172,9 @@ class EmprestimoAdminController extends Controller
         $emprestimo->update([
             'status' => Emprestimos::STATUS_ENCERRADO,
         ]);
+        AuditLog::record('emprestimo_encerrado', 'Encerrou empréstimo devolvido.', $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+        ]);
 
         return redirect()->back()->with('sucesso', 'Empréstimo encerrado.');
     }
@@ -171,6 +190,10 @@ class EmprestimoAdminController extends Controller
         $emprestimo->update([
             'multa_paga_em' => now(),
             'multa_regularizada_por' => auth()->id(),
+        ]);
+        AuditLog::record('multa_regularizada', 'Regularizou multa de empréstimo.', $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+            'valor' => number_format((float) $emprestimo->valor_multa, 2, ',', '.'),
         ]);
 
         return redirect()->back()->with('sucesso', 'Multa regularizada com sucesso. O membro já pode solicitar novos empréstimos.');
@@ -230,7 +253,12 @@ class EmprestimoAdminController extends Controller
         $reserva->update(['status' => Reserva::STATUS_ATENDIDA]);
 
         $emprestimo->load('livro');
-        $reserva->membro->notify(new EmprestimoAprovado($emprestimo));
+        $reserva->load('livro');
+        $reserva->membro->notify(new ReservaDisponivel($reserva, $emprestimo));
+        AuditLog::record('reserva_atendida', "Atendeu reserva do livro {$reserva->livro?->titulo}.", $reserva, [
+            'membro' => $reserva->membro?->nome,
+            'emprestimo_id' => $emprestimo->id,
+        ]);
 
         return redirect()->back()->with('sucesso', 'Reserva atendida. O empréstimo foi aprovado e aguarda retirada.');
     }
@@ -257,6 +285,10 @@ class EmprestimoAdminController extends Controller
         if ($emprestimo->membro) {
             $emprestimo->membro->notify(new EmprestimoRejeitado($emprestimo));
         }
+        AuditLog::record('emprestimo_rejeitado', "Rejeitou solicitação de empréstimo do livro {$emprestimo->livro?->titulo}.", $emprestimo, [
+            'membro' => $emprestimo->membro?->nome,
+            'motivo' => $request->input('motivo'),
+        ]);
 
         return redirect()->back()->with('sucesso', 'Solicitação rejeitada.');
     }

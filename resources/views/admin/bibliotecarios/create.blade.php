@@ -10,7 +10,7 @@
                     </div>
                 </a>
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-0.5">Admin</p>
+                    <p class="text-[10px] font-bold uppercase tracking-[.15em] text-blue-500 mb-0.5">Administração</p>
                     <h1 class="text-lg font-black text-slate-900 dark:text-white">Novo Bibliotecário</h1>
                 </div>
             </div>

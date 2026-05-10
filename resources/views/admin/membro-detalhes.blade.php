@@ -24,7 +24,7 @@
                 <h3 class="font-semibold text-slate-900 dark:text-white mb-4">Informações Pessoais</h3>
                 <div class="space-y-3">
                     <div class="flex items-start">
-                        <span class="text-slate-600 dark:text-gray-400 w-24">📧 Email:</span>
+                        <span class="text-slate-600 dark:text-gray-400 w-24">📧 E-mail:</span>
                         <span class="text-slate-900 dark:text-white">{{ $membro->email }}</span>
                     </div>
                     <div class="flex items-start">
@@ -121,18 +121,18 @@
                                     @endif
                                 </div>
                                 <p class="text-sm text-slate-600 dark:text-gray-400">
-                                    Autor: <strong>{{ $emp->livro?->autor?->nome ?? 'N/A' }}</strong> | 
-                                    Categoria: <strong>{{ $emp->livro?->categoria ?? 'N/A' }}</strong>
+                                    Autor: <strong>{{ $emp->livro?->autor?->nome ?? 'Não informado' }}</strong> |
+                                    Categoria: <strong>{{ $emp->livro?->categoria ?? 'Não informada' }}</strong>
                                 </p>
 
                                 <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                     <div>
                                         <p class="text-slate-600 dark:text-gray-400 text-xs">Empréstimo</p>
-                                        <p class="font-semibold text-slate-900 dark:text-white">{{ $emp->data_emprestimo?->format('d/m/Y') ?? 'N/A' }}</p>
+                                        <p class="font-semibold text-slate-900 dark:text-white">{{ $emp->data_emprestimo?->format('d/m/Y') ?? 'Não informado' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-slate-600 dark:text-gray-400 text-xs">Devolução Prevista</p>
-                                        <p class="font-semibold text-slate-900 dark:text-white">{{ $emp->data_devolucao_prevista?->format('d/m/Y') ?? 'N/A' }}</p>
+                                        <p class="font-semibold text-slate-900 dark:text-white">{{ $emp->data_devolucao_prevista?->format('d/m/Y') ?? 'Não informado' }}</p>
                                     </div>
                                     <div>
                                         <p class="text-slate-600 dark:text-gray-400 text-xs">Devolução Real</p>

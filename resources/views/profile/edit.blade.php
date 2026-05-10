@@ -2,7 +2,7 @@
     @php
         $authUser = auth()->guard('membro')->user() ?: auth()->guard('web')->user() ?: $user;
         $isMembro = auth()->guard('membro')->check() || $authUser instanceof \App\Models\Membros;
-        $nomePerfil = $authUser->name ?? $authUser->nome ?? 'Usuario';
+        $nomePerfil = $authUser->name ?? $authUser->nome ?? 'Usuário';
         $emailPerfil = $authUser->email ?? 'sem-email@bibliotech.local';
         $iniciaisPerfil = collect(explode(' ', trim($nomePerfil)))
             ->filter()
@@ -37,7 +37,7 @@
                 </a>
                 <div class="min-w-0">
                     <p class="text-[10px] font-black uppercase tracking-[.18em] text-slate-500 dark:text-slate-400">
-                        {{ $isMembro ? 'Area do membro' : 'Conta administrativa' }}
+                        {{ $isMembro ? 'Área do membro' : 'Conta administrativa' }}
                     </p>
                     <h1 class="truncate text-xl font-black text-slate-950 dark:text-white font-serif">Meu perfil</h1>
                 </div>
@@ -82,7 +82,7 @@
                                 <p class="mt-1 text-lg font-black text-amber-800 dark:text-amber-300">{{ $favoritosPerfil }}</p>
                             </div>
                             <div class="rounded-md border {{ $pendenciasPerfil ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10' : 'border-emerald-200 bg-emerald-50 dark:border-emerald-500/30 dark:bg-emerald-500/10' }} p-3">
-                                <p class="text-[9px] font-black uppercase tracking-widest {{ $pendenciasPerfil ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300' }}">Pendencias</p>
+                                <p class="text-[9px] font-black uppercase tracking-widest {{ $pendenciasPerfil ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300' }}">Pendências</p>
                                 <p class="mt-1 text-lg font-black {{ $pendenciasPerfil ? 'text-red-700 dark:text-red-300' : 'text-emerald-700 dark:text-emerald-300' }}">{{ $pendenciasPerfil }}</p>
                             </div>
                         </div>
@@ -106,11 +106,11 @@
                                 </div>
                                 <div>
                                     <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Telefone</dt>
-                                    <dd class="mt-1 font-bold text-slate-950 dark:text-white">{{ $authUser->telefone ?? 'Nao informado' }}</dd>
+                                    <dd class="mt-1 font-bold text-slate-950 dark:text-white">{{ $authUser->telefone ?? 'Não informado' }}</dd>
                                 </div>
                             @else
                                 <div>
-                                    <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Permissao</dt>
+                                    <dt class="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-500">Permissão</dt>
                                     <dd class="mt-1 font-bold text-slate-950 dark:text-white">{{ ucfirst($authUser->tipo_usuario ?? 'Equipe') }}</dd>
                                 </div>
                                 <div>
@@ -130,7 +130,7 @@
                                     <i class="ph ph-books"></i>
                                 </a>
                                 <a href="{{ route('emprestimos.historico') }}" class="flex h-11 items-center justify-between rounded-md border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 hover:text-slate-950 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 dark:hover:text-white">
-                                    Emprestimos
+                                    Empréstimos
                                     <i class="ph ph-clock-countdown"></i>
                                 </a>
                                 <a href="{{ route('favoritos.index') }}" class="flex h-11 items-center justify-between rounded-md border border-amber-200 bg-amber-50 px-3 text-sm font-bold text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20">

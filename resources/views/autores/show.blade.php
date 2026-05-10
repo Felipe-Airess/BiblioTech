@@ -94,7 +94,7 @@
                             {{ $autor->nome }} no acervo da biblioteca
                         </h2>
                         <p class="mt-4 max-w-3xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 md:text-base">
-                            {{ $autor->biografia ?: 'Biografia ainda nao cadastrada. As obras deste autor aparecem abaixo para consulta no acervo.' }}
+                            {{ $autor->biografia ?: 'Biografia ainda não cadastrada. As obras deste autor aparecem abaixo para consulta no acervo.' }}
                         </p>
 
                         @if($primeiroLivro)
@@ -124,7 +124,10 @@
                 </div>
             </section>
 
-            <section class="rounded-md border border-slate-200 bg-white/95 p-5 shadow-sm dark:border-white/[.06] dark:bg-[#0d1420]/95 sm:p-6">
+            <section
+                x-data="{ busca: '', categoria: 'todas', somenteDisponiveis: false }"
+                class="rounded-md border border-slate-200 bg-white/95 p-5 shadow-sm dark:border-white/[.06] dark:bg-[#0d1420]/95 sm:p-6"
+            >
                 <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p class="text-[10px] font-black uppercase tracking-[.18em] text-blue-700 dark:text-blue-300">Prateleira do autor</p>
@@ -134,9 +137,60 @@
                 </div>
 
                 @if($autor->livros->count() > 0)
+                    <div class="mb-6 grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_220px_auto] lg:items-end">
+                        <div>
+                            <label for="busca-obras" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Buscar obra</label>
+                            <div class="relative">
+                                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                                <input
+                                    id="busca-obras"
+                                    type="search"
+                                    x-model.debounce.150ms="busca"
+                                    placeholder="Título, sinopse, editora ou estante"
+                                    class="h-11 w-full rounded-md border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200"
+                                >
+                            </div>
+                        </div>
+
+                        <div>
+                            <label for="categoria-obras" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Categoria</label>
+                            <select
+                                id="categoria-obras"
+                                x-model="categoria"
+                                class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200"
+                            >
+                                <option value="todas">Todas</option>
+                                @foreach($categoriasAutor as $categoria)
+                                    <option value="{{ \Illuminate\Support\Str::lower($categoria) }}">{{ $categoria }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <label class="flex h-11 cursor-pointer items-center justify-between gap-3 rounded-md border border-slate-200 bg-slate-50 px-3 text-[11px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                            <span class="inline-flex items-center gap-2">
+                                <i class="ph ph-check-circle"></i>
+                                Disponíveis
+                            </span>
+                            <input type="checkbox" x-model="somenteDisponiveis" class="rounded border-slate-300 text-[#1E3A8A] focus:ring-[#1E3A8A] dark:border-white/10 dark:bg-[#080d14]">
+                        </label>
+                    </div>
+                @endif
+
+                @if($autor->livros->count() > 0)
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                         @foreach($autor->livros as $livro)
-                            <article class="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-lg hover:shadow-slate-950/10 dark:border-white/5 dark:bg-[#0d1420] dark:hover:border-blue-500/40">
+                            <article
+                                x-show="
+                                    (
+                                        busca === ''
+                                        || @js(\Illuminate\Support\Str::lower($livro->titulo . ' ' . ($livro->sinopse ?? '') . ' ' . ($livro->editora ?? '') . ' ' . ($livro->estante ?? '') . ' ' . ($livro->localizacao ?? ''))).includes(busca.toLowerCase())
+                                    )
+                                    && (categoria === 'todas' || categoria === @js(\Illuminate\Support\Str::lower($livro->categoria ?? '')))
+                                    && (!somenteDisponiveis || {{ (int) $livro->quantidade }} > 0)
+                                "
+                                x-transition.opacity.duration.150ms
+                                class="group flex flex-col overflow-hidden rounded-md border border-slate-200 bg-white shadow-sm transition hover:border-blue-300 hover:shadow-lg hover:shadow-slate-950/10 dark:border-white/5 dark:bg-[#0d1420] dark:hover:border-blue-500/40"
+                            >
                                 <a href="{{ route('livros.show', $livro->id) }}" class="flex flex-1 flex-col">
                                     <div class="relative h-64 overflow-hidden bg-slate-100 dark:bg-white/10">
                                         @if($livro->capa)
@@ -148,7 +202,7 @@
                                         @endif
                                         <div class="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-slate-950/70 to-transparent"></div>
                                         @if($livro->e_bestseller)
-                                            <span class="absolute left-3 top-3 rounded-md bg-[#F59E0B] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">Bestseller</span>
+                                            <span class="absolute left-3 top-3 rounded-md bg-[#F59E0B] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">Destaque</span>
                                         @endif
                                         <span class="absolute bottom-3 left-3 rounded-md bg-white/90 px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-800">{{ $livro->categoria ?? 'Acervo' }}</span>
                                     </div>
@@ -159,10 +213,24 @@
                                             <span>{{ (int) $livro->quantidade }} ex.</span>
                                             <span>{{ $livro->data_publicacao ? \Carbon\Carbon::parse($livro->data_publicacao)->format('Y') : '—' }}</span>
                                         </div>
+                                        @if($livro->estante || $livro->localizacao)
+                                            <div class="mt-3 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:border-white/10 dark:bg-white/5 dark:text-slate-400">
+                                                {{ $livro->estante ?: 'Sem estante' }} · {{ $livro->localizacao ?: 'Sem posição' }}
+                                            </div>
+                                        @endif
                                     </div>
                                 </a>
                             </article>
                         @endforeach
+                    </div>
+
+                    <div
+                        x-show="[...$el.previousElementSibling.children].every((item) => item.style.display === 'none')"
+                        x-cloak
+                        class="mt-6 rounded-md border border-slate-200 bg-slate-50 p-8 text-center dark:border-white/10 dark:bg-white/[.03]"
+                    >
+                        <i class="ph ph-magnifying-glass mb-3 block text-5xl text-slate-300 dark:text-slate-600"></i>
+                        <p class="text-sm font-bold text-slate-600 dark:text-slate-400">Nenhuma obra combina com os filtros.</p>
                     </div>
                 @else
                     <div class="rounded-md border border-slate-200 bg-slate-50 p-8 text-center dark:border-white/10 dark:bg-white/[.03]">

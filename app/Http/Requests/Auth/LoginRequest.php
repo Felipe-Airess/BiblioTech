@@ -30,7 +30,7 @@ class LoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'email' => ['required', 'string', 'email:rfc,dns'],
+            'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ];
     }
@@ -50,6 +50,7 @@ class LoginRequest extends FormRequest
 
         if (Auth::attempt($credentials, $remember)) {
             RateLimiter::clear($this->throttleKey());
+            $this->session()->forget('login_failed_attempts');
             return;
         }
 
@@ -57,10 +58,13 @@ class LoginRequest extends FormRequest
         // ambos tipos de conta sejam admitidos usando o mesmo formulário.
         if (Auth::guard('membro')->attempt($credentials, $remember)) {
             RateLimiter::clear($this->throttleKey());
+            $this->session()->forget('login_failed_attempts');
             return;
         }
 
         RateLimiter::hit($this->throttleKey());
+        $this->session()->increment('login_failed_attempts');
+
         throw ValidationException::withMessages([
             'email' => trans('auth.failed'),
         ]);

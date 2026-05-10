@@ -27,7 +27,7 @@ class FavoritoController extends Controller
     public function toggle(Request $request, Livros $livro)
     {
         if (! Schema::hasTable('favoritos')) {
-            return back()->with('erro', 'A tabela de favoritos ainda nao existe. Rode as migrations antes de usar esta feature.');
+            return back()->with('erro', 'A tabela de favoritos ainda não existe. Rode as migrations antes de usar este recurso.');
         }
 
         $membroId = auth()->guard('membro')->id();

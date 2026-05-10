@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User; // Puxando o model de Usuário
+use App\Models\AuditLog;
 use Illuminate\Support\Facades\Hash; // Para criptografar a senha
 use Illuminate\Validation\Rule;
 
@@ -28,16 +29,19 @@ class FuncionarioController extends Controller
         // 1. Valida se o gerente preencheu tudo certo
         $request->validate([
             'name' => 'required|string|max:255',
-            'email' => 'required|email:rfc,dns|unique:users,email',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|confirmed|min:6',
         ]);
 
         // 2. Salva no banco de dados
-        User::create([
+        $bibliotecario = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password), // Criptografa a senha
             'tipo_usuario' => 'bibliotecario', 
+        ]);
+        AuditLog::record('bibliotecario_criado', "Cadastrou o bibliotecário {$bibliotecario->name}.", $bibliotecario, [
+            'email' => $bibliotecario->email,
         ]);
 
         // 3. Devolve para a tela com uma mensagem de sucesso
@@ -61,7 +65,7 @@ class FuncionarioController extends Controller
 
         $validated = $request->validate([
             'name' => 'required|string|max:255',
-            'email' => ['required', 'email:rfc,dns', Rule::unique('users', 'email')->ignore($bibliotecario->id)],
+            'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($bibliotecario->id)],
             'password' => 'nullable|confirmed|min:6',
         ]);
 
@@ -73,6 +77,9 @@ class FuncionarioController extends Controller
         }
 
         $bibliotecario->save();
+        AuditLog::record('bibliotecario_atualizado', "Atualizou o bibliotecário {$bibliotecario->name}.", $bibliotecario, [
+            'email' => $bibliotecario->email,
+        ]);
 
         return redirect()
             ->route('bibliotecarios.index')

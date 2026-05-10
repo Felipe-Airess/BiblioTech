@@ -132,6 +132,12 @@
                                     <i class="ph ph-books text-blue-500 text-base shrink-0"></i>
                                     Minha biblioteca
                                 </a>
+                                <a href="{{ route('membros.situacao') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('membros.situacao') ? 'text-emerald-800 bg-emerald-50 border border-emerald-200 dark:text-white dark:bg-emerald-500/20 dark:border-emerald-400/40' : 'text-slate-600 hover:text-emerald-700 hover:bg-emerald-50 dark:text-gray-400 dark:hover:text-emerald-300 dark:hover:bg-emerald-900/10' }}">
+                                    <i class="ph ph-clipboard-text text-emerald-500 text-base shrink-0"></i>
+                                    Minha situação
+                                </a>
                                 <a href="{{ route('emprestimos.historico') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                                           {{ request()->routeIs('emprestimos.historico') ? 'text-amber-800 bg-amber-50 border border-amber-200 dark:text-white dark:bg-[#F59E0B]/20 dark:border-[#F59E0B]/40' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
@@ -170,8 +176,14 @@
 
                                 @if($isDrawerAdmin)
                                 <div class="my-2 pt-2 border-t border-slate-200 dark:border-white/5">
-                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1 dark:text-slate-600">Admin</p>
+                                    <p class="px-3 text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500 mb-1 dark:text-slate-600">Administração</p>
                                 </div>
+                                <a href="{{ route('admin.operacao.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('admin.operacao.*') ? 'text-blue-700 bg-blue-50 border border-blue-200 dark:text-blue-400 dark:bg-blue-900/10 dark:border-blue-400/40' : 'text-slate-600 hover:text-blue-700 hover:bg-blue-50 dark:text-gray-400 dark:hover:text-blue-400 dark:hover:bg-blue-900/10' }}">
+                                    <i class="ph ph-gauge text-blue-400 text-base shrink-0"></i>
+                                    Operação
+                                </a>
                                 <a href="{{ route('admin.emprestimos.index') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
                                           {{ request()->routeIs('admin.emprestimos.index') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
@@ -207,6 +219,18 @@
                                           {{ request()->routeIs('admin.relatorios.index') ? 'text-amber-700 bg-amber-50 border border-amber-200 dark:text-amber-400 dark:bg-amber-900/10 dark:border-amber-400/40' : 'text-slate-600 hover:text-amber-700 hover:bg-amber-50 dark:text-gray-400 dark:hover:text-amber-400 dark:hover:bg-amber-900/10' }}">
                                     <i class="ph ph-chart-bar text-amber-500/70 text-base shrink-0"></i>
                                     Relatórios
+                                </a>
+                                <a href="{{ route('admin.multas.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('admin.multas.*') ? 'text-red-700 bg-red-50 border border-red-200 dark:text-red-400 dark:bg-red-900/10 dark:border-red-400/40' : 'text-slate-600 hover:text-red-700 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/10' }}">
+                                    <i class="ph ph-currency-circle-dollar text-red-500/70 text-base shrink-0"></i>
+                                    Multas
+                                </a>
+                                <a href="{{ route('admin.auditoria.index') }}"
+                                   class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
+                                          {{ request()->routeIs('admin.auditoria.*') ? 'text-slate-900 bg-slate-100 border border-slate-200 dark:text-white dark:bg-white/10 dark:border-white/20' : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100 dark:text-gray-400 dark:hover:text-white dark:hover:bg-white/5' }}">
+                                    <i class="ph ph-shield-check text-slate-500 text-base shrink-0"></i>
+                                    Auditoria
                                 </a>
                                 <a href="{{ route('membros.create') }}"
                                    class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium
@@ -442,6 +466,14 @@
                 form.addEventListener('submit', (event) => {
                     event.preventDefault();
                     const isDelete = form.dataset.confirm === 'delete';
+                    const lockForm = () => {
+                        const submit = form.querySelector('[type="submit"]');
+                        if (!submit) return;
+                        submit.disabled = true;
+                        submit.classList.add('opacity-70', 'cursor-wait');
+                        submit.dataset.originalText = submit.innerHTML;
+                        submit.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> Processando';
+                    };
 
                     darkSwal.fire({
                         title: form.dataset.title || 'Confirmar ação?',
@@ -457,9 +489,21 @@
                         },
                     }).then((result) => {
                         if (result.isConfirmed) {
+                            lockForm();
                             form.submit();
                         }
                     });
+                });
+            });
+
+            document.querySelectorAll('form:not([data-confirm])').forEach((form) => {
+                form.addEventListener('submit', () => {
+                    const submit = form.querySelector('[type="submit"]');
+                    if (!submit) return;
+                    submit.disabled = true;
+                    submit.classList.add('opacity-70', 'cursor-wait');
+                    const label = form.dataset.submitLabel || 'Processando';
+                    submit.innerHTML = `<i class="ph ph-circle-notch animate-spin"></i> ${label}`;
                 });
             });
 

@@ -4,7 +4,7 @@
     <div class="flex flex-col justify-between flex-1 mt-6">
         <nav>
             <a class="flex items-center px-4 py-2 text-gray-700 bg-gray-100 rounded-lg dark:bg-gray-800 dark:text-gray-200" href="{{ route('dashboard') }}">
-                <span class="mx-4 font-medium">Dashboard</span>
+                <span class="mx-4 font-medium">Painel</span>
             </a>
 
             <hr class="my-6 border-gray-200 dark:border-gray-600" />

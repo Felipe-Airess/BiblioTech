@@ -18,7 +18,7 @@
         <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-500 to-blue-900 dark:from-gray-800 dark:to-blue-900 flex-col justify-center items-center p-12 text-white transition-colors duration-200 sticky top-0 h-screen">
             
             <a href="{{ route('dashboard') }}" class="absolute top-8 left-8 text-sm font-semibold flex items-center gap-2 hover:text-blue-200 transition">
-                <span>&lsaquo;</span> Voltar para o Dashboard
+                <span>&lsaquo;</span> Voltar para o Painel
             </a>
 
             <div class="text-center">
@@ -130,7 +130,7 @@
                         </button>
                         
                         <a href="{{ route('dashboard') }}" class="w-full sm:w-1/3 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 font-bold rounded-lg transition-colors shadow-sm text-center flex items-center justify-center">
-                            Voltar para o Dashboard
+                            Voltar para o Painel
                         </a>
                     </div>
                 </form>

@@ -1,8 +1,8 @@
 <x-app-layout>
     @php
         $disponivel = (int) $livro->quantidade > 0;
-        $anoPublicacao = $livro->data_publicacao ? \Carbon\Carbon::parse($livro->data_publicacao)->format('Y') : 'Ano nao informado';
-        $statusTexto = $disponivel ? 'Disponivel para emprestimo' : 'Indisponivel no momento';
+        $anoPublicacao = $livro->data_publicacao ? \Carbon\Carbon::parse($livro->data_publicacao)->format('Y') : 'Ano não informado';
+        $statusTexto = $disponivel ? 'Disponível para empréstimo' : 'Indisponível no momento';
         $statusClasse = $disponivel
             ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300'
             : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300';
@@ -52,7 +52,7 @@
                                     </div>
                                 @endif
                                 @if($livro->e_bestseller)
-                                    <span class="absolute left-3 top-3 rounded-md bg-[#F59E0B] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">Bestseller</span>
+                                    <span class="absolute left-3 top-3 rounded-md bg-[#F59E0B] px-2 py-1 text-[10px] font-black uppercase tracking-widest text-slate-950">Destaque</span>
                                 @endif
                             </div>
 
@@ -90,7 +90,7 @@
                             @if($livro->autor)
                                 <a href="{{ route('autores.show', $livro->autor->id) }}" class="font-bold text-blue-700 transition hover:text-amber-600 dark:text-blue-300 dark:hover:text-amber-300">{{ $livro->autor->nome }}</a>
                             @else
-                                <span class="font-bold">Autor nao informado</span>
+                                <span class="font-bold">Autor não informado</span>
                             @endif
                         </p>
 
@@ -110,7 +110,7 @@
                                 <p class="mt-1 truncate text-sm font-bold text-slate-900 dark:text-white">{{ $livro->editora ?: '—' }}</p>
                             </div>
                             <div class="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">
-                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Paginas</p>
+                                <p class="text-[10px] uppercase tracking-widest text-slate-500">Páginas</p>
                                 <p class="mt-1 text-sm font-bold text-slate-900 dark:text-white">{{ $livro->paginas ?: '—' }}</p>
                             </div>
                             <div class="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">
@@ -128,13 +128,13 @@
                                 <div>
                                     <h2 class="text-sm font-black uppercase tracking-[.16em] text-slate-900 dark:text-white">Sobre a obra</h2>
                                     <p class="mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-400">
-                                        {{ $livro->sinopse ?: 'Nenhuma sinopse disponivel para esta obra.' }}
+                                        {{ $livro->sinopse ?: 'Nenhuma sinopse disponível para esta obra.' }}
                                     </p>
                                 </div>
 
                                 @if($livro->preview)
                                     <div class="rounded-md border border-amber-200 bg-amber-50 p-4 dark:border-amber-500/20 dark:bg-amber-500/10">
-                                        <h2 class="text-[11px] font-black uppercase tracking-[.16em] text-amber-800 dark:text-amber-300">Previa</h2>
+                                        <h2 class="text-[11px] font-black uppercase tracking-[.16em] text-amber-800 dark:text-amber-300">Prévia</h2>
                                         <p class="mt-2 text-sm italic leading-relaxed text-amber-900 dark:text-amber-100">
                                             "{{ Str::limit($livro->preview, 500) }}"
                                         </p>
@@ -146,7 +146,7 @@
                                 <div class="mb-4 flex items-center justify-between gap-3">
                                     <h2 class="text-[11px] font-black uppercase tracking-[.16em] text-slate-900 dark:text-white">Empréstimo</h2>
                                     <span class="rounded-md border px-2 py-1 text-[10px] font-black uppercase tracking-widest {{ $livro->e_bestseller ? 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300' : 'border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300' }}">
-                                        {{ $livro->e_bestseller ? 'Bestseller' : 'Comum' }}
+                                        {{ $livro->e_bestseller ? 'Destaque' : 'Comum' }}
                                     </span>
                                 </div>
 
@@ -217,8 +217,17 @@
                                                     </button>
                                                 </form>
                                             @elseif($reservaDoMembro)
-                                                <div class="rounded-md border border-amber-200 bg-amber-50 p-3 text-center text-xs font-bold text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
-                                                    Você está na posição {{ $posicaoReserva }} da fila
+                                                <div class="rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                                    <p class="text-center text-xs font-bold text-amber-800 dark:text-amber-300">
+                                                        Você está na posição {{ $posicaoReserva }} da fila
+                                                    </p>
+                                                    <form action="{{ route('reservas.cancelar', $reservaDoMembro->id) }}" method="POST" class="mt-3" data-confirm="delete" data-title="Cancelar reserva?" data-text="Você sairá da fila deste livro.">
+                                                        @csrf
+                                                        <button type="submit" class="inline-flex h-10 w-full items-center justify-center gap-2 rounded-md border border-amber-300 bg-white px-3 text-[10px] font-black uppercase tracking-widest text-amber-800 transition hover:bg-amber-100 dark:border-amber-500/30 dark:bg-[#0d1420] dark:text-amber-300 dark:hover:bg-amber-500/10">
+                                                            <i class="ph ph-x-circle"></i>
+                                                            Cancelar reserva
+                                                        </button>
+                                                    </form>
                                                 </div>
                                             @else
                                                 <button disabled class="h-11 w-full rounded-md border border-slate-200 bg-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-400 dark:border-white/10 dark:bg-white/5">Obra indisponível</button>
