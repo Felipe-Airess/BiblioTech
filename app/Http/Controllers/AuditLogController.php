@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\User;
+use App\Rules\RealisticDate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
@@ -52,6 +53,13 @@ class AuditLogController extends Controller
 
     private function dadosAuditoria(Request $request, bool $paginated): array
     {
+        $request->validate([
+            'inicio' => ['nullable', 'date_format:Y-m-d', new RealisticDate('period')],
+            'fim' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:inicio', new RealisticDate('period')],
+        ], [
+            'fim.after_or_equal' => 'A data final precisa ser igual ou posterior à data inicial.',
+        ]);
+
         $hasAuditTable = Schema::hasTable('audit_logs');
         $actions = collect();
         $users = User::whereIn('tipo_usuario', ['gerente', 'bibliotecario'])

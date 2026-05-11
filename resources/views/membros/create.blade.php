@@ -113,7 +113,7 @@
 
                         <div>
                             <x-input-label for="data_nascimento" :value="'Nascimento'" />
-                            <x-text-input id="data_nascimento" name="data_nascimento" type="date" value="{{ old('data_nascimento') }}" required data-member-field class="mt-2 block w-full bg-white text-slate-900 dark:bg-[#080d14] dark:text-white" />
+                            <x-text-input id="data_nascimento" name="data_nascimento" type="date" value="{{ old('data_nascimento') }}" min="{{ now()->subYears(120)->toDateString() }}" max="{{ now()->subYears(5)->toDateString() }}" required data-member-field class="mt-2 block w-full bg-white text-slate-900 dark:bg-[#080d14] dark:text-white" />
                             <x-input-error class="mt-2" :messages="$errors->get('data_nascimento')" />
                         </div>
                     </div>

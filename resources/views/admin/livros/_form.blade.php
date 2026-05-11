@@ -69,7 +69,7 @@
 
                 <div>
                     <label for="data_publicacao" class="{{ $labelClass }}">Publicação</label>
-                    <input id="data_publicacao" type="date" name="data_publicacao" value="{{ old('data_publicacao', $isEdit && $livro->data_publicacao ? (is_string($livro->data_publicacao) ? $livro->data_publicacao : $livro->data_publicacao->format('Y-m-d')) : '') }}" required class="{{ $inputClass }}">
+                    <input id="data_publicacao" type="date" name="data_publicacao" value="{{ old('data_publicacao', $isEdit && $livro->data_publicacao ? (is_string($livro->data_publicacao) ? $livro->data_publicacao : $livro->data_publicacao->format('Y-m-d')) : '') }}" min="1450-01-01" max="{{ today()->toDateString() }}" required class="{{ $inputClass }}">
                     <x-input-error :messages="$errors->get('data_publicacao')" class="mt-2" />
                 </div>
             </div>

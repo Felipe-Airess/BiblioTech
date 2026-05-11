@@ -166,11 +166,11 @@
                 </div>
                 <div>
                     <label for="inicio" class="block text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Início</label>
-                    <input id="inicio" name="inicio" type="date" value="{{ $inicio->toDateString() }}" class="reports-input">
+                    <input id="inicio" name="inicio" type="date" value="{{ $inicio->toDateString() }}" min="2000-01-01" max="{{ today()->toDateString() }}" class="reports-input">
                 </div>
                 <div>
                     <label for="fim" class="block text-[11px] uppercase tracking-wider text-slate-500 dark:text-slate-400 font-bold mb-1">Fim</label>
-                    <input id="fim" name="fim" type="date" value="{{ $fim->toDateString() }}" class="reports-input">
+                    <input id="fim" name="fim" type="date" value="{{ $fim->toDateString() }}" min="2000-01-01" max="{{ today()->toDateString() }}" class="reports-input">
                 </div>
                 <button class="h-[42px] px-4 rounded-md bg-[#1E3A8A] text-white text-xs font-black uppercase tracking-wider hover:bg-blue-900 transition inline-flex items-center justify-center">
                     <i class="ph ph-funnel mr-1"></i> Filtrar

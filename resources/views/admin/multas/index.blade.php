@@ -107,11 +107,11 @@
                     </div>
                     <div>
                         <label for="inicio" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Início</label>
-                        <input id="inicio" name="inicio" value="{{ $inicio?->toDateString() }}" type="date" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200">
+                        <input id="inicio" name="inicio" value="{{ $inicio?->toDateString() }}" type="date" min="2000-01-01" max="{{ today()->toDateString() }}" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200">
                     </div>
                     <div>
                         <label for="fim" class="mb-1 block text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Fim</label>
-                        <input id="fim" name="fim" value="{{ $fim?->toDateString() }}" type="date" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200">
+                        <input id="fim" name="fim" value="{{ $fim?->toDateString() }}" type="date" min="2000-01-01" max="{{ today()->toDateString() }}" class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-800 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-200">
                     </div>
                     <button class="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-[#1E3A8A] px-4 text-[11px] font-black uppercase tracking-widest text-white transition hover:bg-blue-800">
                         <i class="ph ph-funnel"></i>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\Autor;
+use App\Rules\RealisticDate;
 
 class AutorController extends Controller
 {
@@ -67,7 +68,7 @@ class AutorController extends Controller
             'nome' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'biografia' => 'nullable|string',
-            'data_nascimento' => 'nullable|date_format:Y-m-d',
+            'data_nascimento' => ['nullable', 'date_format:Y-m-d', new RealisticDate('author_birth')],
             'nacionalidade' => 'nullable|string|max:255',
         ]);
 
@@ -102,7 +103,7 @@ class AutorController extends Controller
             'nome' => 'required|string|max:255',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
             'biografia' => 'nullable|string',
-            'data_nascimento' => 'nullable|date_format:Y-m-d',
+            'data_nascimento' => ['nullable', 'date_format:Y-m-d', new RealisticDate('author_birth')],
             'nacionalidade' => 'nullable|string|max:255',
         ]);
 

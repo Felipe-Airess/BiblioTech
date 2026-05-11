@@ -77,6 +77,8 @@
                         type="date"
                         name="data_nascimento"
                         x-model="dataNascimento"
+                        min="1000-01-01"
+                        max="{{ today()->toDateString() }}"
                         class="h-11 w-full rounded-md border border-slate-200 bg-white px-3 text-sm text-slate-900 focus:border-[#1E3A8A] focus:outline-none focus:ring-2 focus:ring-[#1E3A8A]/20 dark:border-white/10 dark:bg-[#080d14] dark:text-slate-100"
                     >
                     <x-input-error :messages="$errors->get('data_nascimento')" class="mt-2" />

@@ -29,7 +29,7 @@
                 Salvar perfil
             </button>
 
-            @if (session('status') === 'profile-updated')
+            @if (session('sucesso') === 'Perfil atualizado com sucesso.')
                 <p
                     x-data="{ show: true }"
                     x-show="show"

@@ -13,6 +13,7 @@ use App\Models\Emprestimos;
 use App\Models\Membros;
 use App\Models\Reserva;
 use App\Models\Categoria;
+use App\Rules\RealisticDate;
 use App\Models\AuditLog;
 
 class LivroController extends Controller{
@@ -326,7 +327,7 @@ class LivroController extends Controller{
             'quantidade'      => 'required|integer|min:0',  // NOVO: min:0 impede quantidade negativa!
             'estante'         => 'nullable|string|max:50',
             'localizacao'     => 'nullable|string|max:100',
-            'data_publicacao' => 'required|date_format:Y-m-d',           // NOVO
+            'data_publicacao' => ['required', 'date_format:Y-m-d', new RealisticDate('book_publication')],           // NOVO
             'sinopse'         => 'nullable|string',  
             'editora'         => 'nullable|string|max:255', // NOVO
             'paginas'         => 'nullable|integer|min:1', // NOVO
@@ -407,7 +408,7 @@ class LivroController extends Controller{
             'quantidade'      => 'required|integer|min:0',  // NOVO
             'estante'         => 'nullable|string|max:50',
             'localizacao'     => 'nullable|string|max:100',
-            'data_publicacao' => 'required|date_format:Y-m-d',           // NOVO
+            'data_publicacao' => ['required', 'date_format:Y-m-d', new RealisticDate('book_publication')],           // NOVO
             'sinopse'         => 'nullable|string',         // NOVO
             'editora'         => 'nullable|string|max:255', // NOVO
             'paginas'         => 'nullable|integer|min:1',  // NOVO

@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use App\Rules\RealisticDate;
 
 class RelatorioController extends Controller
 {
@@ -31,6 +32,13 @@ class RelatorioController extends Controller
 
     private function dadosRelatorio(Request $request): array
     {
+        $request->validate([
+            'inicio' => ['nullable', 'date_format:Y-m-d', new RealisticDate('period')],
+            'fim' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:inicio', new RealisticDate('period')],
+        ], [
+            'fim.after_or_equal' => 'A data final precisa ser igual ou posterior à data inicial.',
+        ]);
+
         $inicio = $request->filled('inicio')
             ? Carbon::parse($request->input('inicio'))->startOfDay()
             : now()->subDays(30)->startOfDay();

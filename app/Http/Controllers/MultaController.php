@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Emprestimos;
 use App\Models\Membros;
+use App\Rules\RealisticDate;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 
@@ -56,6 +57,13 @@ class MultaController extends Controller
 
     private function dadosMultas(Request $request, bool $paginated): array
     {
+        $request->validate([
+            'inicio' => ['nullable', 'date_format:Y-m-d', new RealisticDate('period')],
+            'fim' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:inicio', new RealisticDate('period')],
+        ], [
+            'fim.after_or_equal' => 'A data final precisa ser igual ou posterior à data inicial.',
+        ]);
+
         $status = $request->input('status', 'pendentes');
         $membroBusca = trim((string) $request->input('membro', ''));
         $valorMinimo = $request->filled('valor_minimo') ? (float) str_replace(',', '.', $request->input('valor_minimo')) : null;

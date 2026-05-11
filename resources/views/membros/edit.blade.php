@@ -67,7 +67,7 @@
 
                     <div>
                         <label for="data_nascimento" class="{{ $label }}">Nascimento</label>
-                        <input id="data_nascimento" name="data_nascimento" type="date" value="{{ old('data_nascimento', $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('Y-m-d') : '') }}" class="{{ $input }}" required>
+                        <input id="data_nascimento" name="data_nascimento" type="date" value="{{ old('data_nascimento', $membro->data_nascimento ? \Carbon\Carbon::parse($membro->data_nascimento)->format('Y-m-d') : '') }}" min="{{ now()->subYears(120)->toDateString() }}" max="{{ now()->subYears(5)->toDateString() }}" class="{{ $input }}" required>
                     </div>
 
                     <div>

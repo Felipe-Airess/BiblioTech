@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Rules\ValidCpf;
 use App\Rules\ValidPhonePrefix;
+use App\Rules\RealisticDate;
 use App\Models\Membros;
 use App\Models\AuditLog;
 use Illuminate\Http\Request;
@@ -32,7 +33,7 @@ class MembrosController extends Controller
             'cpf' => ['required', 'string', 'unique:membros,cpf', new ValidCpf],
             'telefone' => ['required', 'string', 'max:20', new ValidPhonePrefix],
             'endereco' => 'required|string|max:255',
-            'data_nascimento' => 'required|date_format:Y-m-d',
+            'data_nascimento' => ['required', 'date_format:Y-m-d', new RealisticDate('member_birth')],
             'tipo_membro' => 'required|string|max:50',
             'password' => 'required|string|min:8|confirmed',
         ]);
@@ -77,7 +78,7 @@ class MembrosController extends Controller
             ],
             'telefone' => ['required', 'string', 'max:20', new ValidPhonePrefix],
             'endereco' => 'required|string|max:255',
-            'data_nascimento' => 'required|date_format:Y-m-d',
+            'data_nascimento' => ['required', 'date_format:Y-m-d', new RealisticDate('member_birth')],
             'tipo_membro' => 'required|string|max:50',
             'password' => 'nullable|string|min:8|confirmed',
         ]);

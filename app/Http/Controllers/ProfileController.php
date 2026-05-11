@@ -46,7 +46,7 @@ class ProfileController extends Controller
 
         $user->save();
 
-        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+        return Redirect::route('profile.edit')->with('sucesso', 'Perfil atualizado com sucesso.');
     }
 
     /**
@@ -54,13 +54,19 @@ class ProfileController extends Controller
      */
     public function destroy(Request $request): RedirectResponse
     {
+        $user = Auth::guard('web')->user() ?: Auth::guard('membro')->user();
+        $guard = $user instanceof \App\Models\Membros ? 'membro' : 'web';
+
         $request->validateWithBag('userDeletion', [
-            'password' => ['required', 'current_password'],
+            'password' => ['required', "current_password:{$guard}"],
+        ], [
+            'password.required' => 'Informe sua senha para excluir a conta.',
+            'password.current_password' => 'A senha informada está incorreta.',
+        ], [
+            'password' => 'senha',
         ]);
 
-        $user = Auth::guard('web')->user() ?: Auth::guard('membro')->user();
-
-        Auth::guard($user instanceof \App\Models\Membros ? 'membro' : 'web')->logout();
+        Auth::guard($guard)->logout();
 
         $user->delete();
 

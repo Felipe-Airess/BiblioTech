@@ -35,7 +35,7 @@
                 Salvar senha
             </button>
 
-            @if (session('status') === 'password-updated')
+            @if (session('sucesso') === 'Senha atualizada com sucesso.')
                 <p
                     x-data="{ show: true }"
                     x-show="show"
