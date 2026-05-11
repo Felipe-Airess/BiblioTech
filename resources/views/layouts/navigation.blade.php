@@ -4,7 +4,7 @@
             ? Auth::guard('web')->user()
             : (Auth::guard('membro')->check() ? Auth::guard('membro')->user() : null);
         
-        $ehMembro = Auth::guard('membro')->check();
+        $ehMembro = ! Auth::guard('web')->check() && Auth::guard('membro')->check();
         $ehAdmin  = Auth::guard('web')->check() && 
                     in_array(Auth::guard('web')->user()->tipo_usuario ?? '', ['gerente', 'bibliotecario']);
         $globalNotifiable = $authUser;

@@ -53,7 +53,7 @@ Schedule::command('emprestimos:lembrar')->dailyAt('08:00');
     Route::put('/admin/bibliotecarios/{bibliotecario}', [FuncionarioController::class, 'update'])->name('bibliotecarios.update')->middleware('tipo:gerente');
 
 Route::get('/emprestimos/{id}/comprovante', [EmprestimoController::class, 'comprovante'])
-    ->middleware('auth:membro')
+    ->middleware('membro')
     ->name('emprestimos.comprovante');
 
 //Rotas para o CRUD de Membros
@@ -62,9 +62,9 @@ Route::post('/membros/salvar', [MembrosController::class, 'store'])->name('membr
 Route::get('/admin/membros/{membro}/editar', [MembrosController::class, 'edit'])->name('membros.edit')->middleware('tipo:gerente,bibliotecario');
 Route::put('/admin/membros/{membro}', [MembrosController::class, 'update'])->name('membros.update')->middleware('tipo:gerente,bibliotecario');
 
-Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->middleware('auth:membro')->name('livros.alugar'); // Só membros podem alugar livros
-Route::post('/livros/{id}/reservar', [EmprestimoController::class, 'reservar'])->middleware('auth:membro')->name('livros.reservar');
-Route::post('/livros/{livro}/favorito', [FavoritoController::class, 'toggle'])->middleware('auth:membro')->name('livros.favorito.toggle');
+Route::post('/livros/{id}/alugar', [EmprestimoController::class, 'alugar'])->middleware('membro')->name('livros.alugar');
+Route::post('/livros/{id}/reservar', [EmprestimoController::class, 'reservar'])->middleware('membro')->name('livros.reservar');
+Route::post('/livros/{livro}/favorito', [FavoritoController::class, 'toggle'])->middleware('membro')->name('livros.favorito.toggle');
 Route::get('/livros/{id}', [LivroController::class, 'show'])->name('livros.show'); // Rotas públicas para listar e ver detalhes dos livros
 Route::post('/livros/{id}/comentarios', [LivroController::class, 'storeComentario'])
     ->middleware('auth:web,membro')
@@ -101,31 +101,31 @@ Route::get('/dashboard', [LivroController::class, 'dashboard'])
     Route::put('/admin/categorias/{categoria}', [CategoriaController::class, 'update'])->name('categorias.update')->middleware('tipo:gerente,bibliotecario');
 
     Route::get('/meus-emprestimos', [EmprestimoController::class, 'historico'])
-    ->middleware('auth:membro')
+    ->middleware('membro')
     ->name('emprestimos.historico');
     Route::post('/meus-emprestimos/{id}/solicitar-devolucao', [EmprestimoController::class, 'solicitarDevolucao'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('emprestimos.solicitar-devolucao');
     Route::post('/meus-emprestimos/{id}/renovar', [EmprestimoController::class, 'renovar'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('emprestimos.renovar');
     Route::post('/minhas-reservas/{id}/cancelar', [EmprestimoController::class, 'cancelarReserva'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('reservas.cancelar');
     Route::get('/meus-favoritos', [FavoritoController::class, 'index'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('favoritos.index');
     Route::get('/minha-biblioteca', [MinhaBibliotecaController::class, 'index'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('membros.biblioteca');
     Route::get('/minha-situacao', [MinhaBibliotecaController::class, 'situacao'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('membros.situacao');
     Route::get('/minha-carteirinha', [CarteirinhaController::class, 'show'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('membros.carteirinha');
     Route::get('/minha-carteirinha/pdf', [CarteirinhaController::class, 'pdf'])
-        ->middleware('auth:membro')
+        ->middleware('membro')
         ->name('membros.carteirinha.pdf');
 
     // Rotas admin: Perfil de Membros

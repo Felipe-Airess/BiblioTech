@@ -1,4 +1,22 @@
 <x-app-layout>
+    @php
+        $relatorios = [
+            'visao_geral' => ['label' => 'Visão geral', 'icon' => 'ph-gauge'],
+            'acervo' => ['label' => 'Acervo', 'icon' => 'ph-books'],
+            'circulacao' => ['label' => 'Circulação', 'icon' => 'ph-arrows-left-right'],
+            'membros' => ['label' => 'Membros', 'icon' => 'ph-users-three'],
+            'financeiro' => ['label' => 'Financeiro', 'icon' => 'ph-currency-circle-dollar'],
+            'operacao' => ['label' => 'Operação', 'icon' => 'ph-hourglass-medium'],
+        ];
+
+        $mostraGeral = $tipoRelatorio === 'visao_geral';
+        $mostraAcervo = in_array($tipoRelatorio, ['visao_geral', 'acervo'], true);
+        $mostraCirculacao = in_array($tipoRelatorio, ['visao_geral', 'circulacao'], true);
+        $mostraMembros = in_array($tipoRelatorio, ['visao_geral', 'membros'], true);
+        $mostraFinanceiro = in_array($tipoRelatorio, ['visao_geral', 'financeiro'], true);
+        $mostraOperacao = in_array($tipoRelatorio, ['visao_geral', 'operacao'], true);
+    @endphp
+
     <x-slot name="header">
         <div class="flex items-center justify-between w-full gap-4">
             <div class="flex items-center gap-3">
@@ -141,6 +159,7 @@
 
         <div class="max-w-7xl mx-auto relative z-10 space-y-6">
             <form method="GET" class="reports-panel border rounded-lg p-4 reports-filter-grid">
+                <input type="hidden" name="tipo" value="{{ $tipoRelatorio }}">
                 <div class="reports-filter-copy">
                     <p class="text-[11px] uppercase tracking-[.16em] text-slate-500 dark:text-slate-400 font-black mb-1">Período analisado</p>
                     <p class="text-sm text-slate-600 dark:text-slate-300">Os relatórios abaixo usam empréstimos entre {{ $inicio->format('d/m/Y') }} e {{ $fim->format('d/m/Y') }}.</p>
@@ -156,11 +175,21 @@
                 <button class="h-[42px] px-4 rounded-md bg-[#1E3A8A] text-white text-xs font-black uppercase tracking-wider hover:bg-blue-900 transition inline-flex items-center justify-center">
                     <i class="ph ph-funnel mr-1"></i> Filtrar
                 </button>
-                <a href="{{ route('admin.relatorios.pdf', ['inicio' => $inicio->toDateString(), 'fim' => $fim->toDateString()]) }}" class="h-[42px] px-4 rounded-md bg-[#F59E0B] text-slate-950 text-xs font-black uppercase tracking-wider hover:bg-amber-400 transition inline-flex items-center justify-center">
+                <a href="{{ route('admin.relatorios.pdf', ['inicio' => $inicio->toDateString(), 'fim' => $fim->toDateString(), 'tipo' => $tipoRelatorio]) }}" class="h-[42px] px-4 rounded-md bg-[#F59E0B] text-slate-950 text-xs font-black uppercase tracking-wider hover:bg-amber-400 transition inline-flex items-center justify-center">
                     <i class="ph ph-file-pdf mr-1"></i> PDF
                 </a>
             </form>
 
+            <nav class="reports-panel flex gap-2 overflow-x-auto rounded-lg border p-2" aria-label="Relatórios separados">
+                @foreach($relatorios as $tipo => $relatorio)
+                    <a href="{{ route('admin.relatorios.index', ['inicio' => $inicio->toDateString(), 'fim' => $fim->toDateString(), 'tipo' => $tipo]) }}" class="inline-flex h-10 shrink-0 items-center gap-2 rounded-md px-3 text-[11px] font-black uppercase tracking-widest transition {{ $tipoRelatorio === $tipo ? 'bg-[#1E3A8A] text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-white/10' }}">
+                        <i class="ph {{ $relatorio['icon'] }}"></i>
+                        {{ $relatorio['label'] }}
+                    </a>
+                @endforeach
+            </nav>
+
+            @if($mostraGeral)
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
                 @foreach([
                     ['label' => 'Livros no acervo', 'value' => $metricas['livros'], 'icon' => 'ph-books', 'tone' => 'text-blue-600 dark:text-blue-400'],
@@ -177,7 +206,9 @@
                     </div>
                 @endforeach
             </div>
+            @endif
 
+            @if($mostraCirculacao)
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <section class="reports-panel border rounded-lg p-5">
                     <div class="flex items-center justify-between gap-3 mb-4">
@@ -244,7 +275,9 @@
                     </div>
                 </section>
             </div>
+            @endif
 
+            @if($mostraGeral)
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <section class="reports-panel border rounded-lg p-5">
                     <p class="text-[11px] uppercase tracking-[.16em] text-slate-500 dark:text-slate-400 font-black">Situação atual</p>
@@ -288,7 +321,9 @@
                     </div>
                 </section>
             </div>
+            @endif
 
+            @if($mostraCirculacao)
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <section class="reports-panel border rounded-lg p-5">
                     <p class="text-[11px] uppercase tracking-[.16em] text-slate-500 dark:text-slate-400 font-black">Categorias preferidas</p>
@@ -329,7 +364,9 @@
                     </div>
                 </section>
             </div>
+            @endif
 
+            @if($mostraMembros)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5 flex items-center justify-between gap-3">
                     <div>
@@ -370,7 +407,9 @@
                     </table>
                 </div>
             </section>
+            @endif
 
+            @if($mostraCirculacao)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5 flex items-center justify-between gap-3">
                     <div>
@@ -404,7 +443,9 @@
                     </table>
                 </div>
             </section>
+            @endif
 
+            @if($mostraOperacao)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5 flex items-center justify-between gap-3">
                     <div>
@@ -445,7 +486,9 @@
                     </table>
                 </div>
             </section>
+            @endif
 
+            @if($mostraOperacao)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5 flex items-center justify-between gap-3">
                     <div>
@@ -499,7 +542,9 @@
                     </table>
                 </div>
             </section>
+            @endif
 
+            @if($mostraAcervo)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5 flex items-center justify-between gap-3">
                     <div>
@@ -546,7 +591,9 @@
                     </table>
                 </div>
             </section>
+            @endif
 
+            @if($mostraFinanceiro)
             <section class="reports-panel border rounded-lg overflow-hidden">
                 <div class="p-5">
                     <p class="text-[11px] uppercase tracking-[.16em] text-slate-500 dark:text-slate-400 font-black">Atrasos e multas</p>
@@ -585,6 +632,7 @@
                     </table>
                 </div>
             </section>
+            @endif
         </div>
     </div>
 

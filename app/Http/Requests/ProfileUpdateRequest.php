@@ -16,7 +16,7 @@ class ProfileUpdateRequest extends FormRequest
      */
     public function rules(): array
     {
-        $user = $this->user();
+        $user = auth()->guard('web')->user() ?: auth()->guard('membro')->user();
 
         // Use the correct model for uniqueness checks depending on the guard/user type.
         $userClass = $user instanceof Membros ? Membros::class : User::class;

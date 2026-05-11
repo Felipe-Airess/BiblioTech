@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 
@@ -39,9 +40,14 @@ class RegisteredUserController extends Controller
         ]);
 
         $user = Membros::create([
-            // o modelo usa "nome" em vez de name
             'nome' => $request->name,
             'email' => $request->email,
+            'cpf' => $this->gerarIdentificadorCadastro('cpf'),
+            'telefone' => 'Não informado',
+            'endereco' => 'Atualização pendente',
+            'data_nascimento' => now()->subYears(18)->toDateString(),
+            'tipo_membro' => 'Pendente',
+            'numero_carteirinha' => $this->gerarNumeroCarteirinha(),
             'password' => Hash::make($request->password),
         ]);
 
@@ -51,5 +57,23 @@ class RegisteredUserController extends Controller
         Auth::guard('membro')->login($user);
 
         return redirect(route('dashboard', absolute: false));
+    }
+
+    private function gerarNumeroCarteirinha(): string
+    {
+        do {
+            $numero = 'BT-' . now()->format('ymd') . '-' . Str::upper(Str::random(5));
+        } while (Membros::where('numero_carteirinha', $numero)->exists());
+
+        return $numero;
+    }
+
+    private function gerarIdentificadorCadastro(string $prefixo): string
+    {
+        do {
+            $identificador = strtoupper($prefixo) . '-' . Str::upper(Str::random(12));
+        } while (Membros::where($prefixo, $identificador)->exists());
+
+        return $identificador;
     }
 }

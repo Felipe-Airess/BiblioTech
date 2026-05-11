@@ -49,6 +49,7 @@ class LoginRequest extends FormRequest
         $remember = $this->boolean('remember');
 
         if (Auth::attempt($credentials, $remember)) {
+            Auth::guard('membro')->logout();
             RateLimiter::clear($this->throttleKey());
             $this->session()->forget('login_failed_attempts');
             return;
@@ -57,6 +58,7 @@ class LoginRequest extends FormRequest
         // se falhar, tentamos também o guard de membros, para que
         // ambos tipos de conta sejam admitidos usando o mesmo formulário.
         if (Auth::guard('membro')->attempt($credentials, $remember)) {
+            Auth::guard('web')->logout();
             RateLimiter::clear($this->throttleKey());
             $this->session()->forget('login_failed_attempts');
             return;

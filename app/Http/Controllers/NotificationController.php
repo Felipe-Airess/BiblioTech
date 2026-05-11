@@ -10,7 +10,7 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        $notifiable = Auth::guard('membro')->check() ? Auth::guard('membro')->user() : Auth::user();
+        $notifiable = $this->currentNotifiable();
         if (!$notifiable) {
             return $request->expectsJson()
                 ? response()->json(['data' => []])
@@ -21,6 +21,7 @@ class NotificationController extends Controller
 
         if ($request->expectsJson()) {
             return response()->json([
+                'unread_count' => $notifications->whereNull('read_at')->count(),
                 'data' => $notifications->map(fn ($notification) => [
                     'id' => $notification->id,
                     'data' => $notification->data,
@@ -41,7 +42,7 @@ class NotificationController extends Controller
 
     public function markAllRead(Request $request)
     {
-        $notifiable = Auth::guard('membro')->check() ? Auth::guard('membro')->user() : Auth::user();
+        $notifiable = $this->currentNotifiable();
         if ($notifiable) {
             DB::table('notifications')
                 ->where('notifiable_type', $notifiable::class)
@@ -57,7 +58,7 @@ class NotificationController extends Controller
         $notifiable = $this->currentNotifiable();
 
         if (!$notifiable) {
-            abort(403);
+            abort(403, 'Você precisa estar logado para acessar notificações.');
         }
 
         $updated = $this->notificationQuery($notifiable)
@@ -77,7 +78,7 @@ class NotificationController extends Controller
         $notifiable = $this->currentNotifiable();
 
         if (!$notifiable) {
-            abort(403);
+            abort(403, 'Você precisa estar logado para gerenciar notificações.');
         }
 
         $deleted = $this->notificationQuery($notifiable)
@@ -108,7 +109,7 @@ class NotificationController extends Controller
 
     private function currentNotifiable()
     {
-        return Auth::guard('membro')->check() ? Auth::guard('membro')->user() : Auth::user();
+        return Auth::guard('web')->user() ?: Auth::guard('membro')->user();
     }
 
     private function notificationQuery($notifiable)

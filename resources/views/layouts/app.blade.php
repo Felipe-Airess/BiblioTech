@@ -107,8 +107,8 @@
                         @php
                             $webUser = auth()->guard('web')->user();
                             $memberUser = auth()->guard('membro')->user();
-                            $drawerUser = $memberUser ?: $webUser;
-                            $isDrawerMember = (bool) $memberUser;
+                            $drawerUser = $webUser ?: $memberUser;
+                            $isDrawerMember = ! $webUser && (bool) $memberUser;
                             $isDrawerAdmin = $webUser && in_array($webUser->tipo_usuario ?? null, ['gerente', 'bibliotecario'], true);
                             $isDrawerManager = $webUser && ($webUser->tipo_usuario ?? null) === 'gerente';
                         @endphp
@@ -398,7 +398,57 @@
             globalNotifBackdrop?.addEventListener('click', () => setGlobalNotificationsOpen(false));
 
             if (globalBadge && typeof Swal !== 'undefined') {
-                Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3000,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({icon:'info',title:'Você tem notificações novas'});
+                const initialCount = Number(globalBadge.textContent.replace('+', '')) || 1;
+                Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({
+                    icon:'info',
+                    title: initialCount === 1 ? 'Você tem 1 aviso novo' : `Você tem ${globalBadge.textContent} avisos novos`
+                });
+            }
+
+            if (globalNotifToggle) {
+                let knownUnread = Number(globalBadge?.textContent.replace('+', '')) || 0;
+                const notificationToast = typeof Swal !== 'undefined'
+                    ? Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3800,timerProgressBar:true,background:'#0d1420',color:'#fff'})
+                    : null;
+
+                const updateBadge = (count) => {
+                    if (!globalNotifToggle) return;
+                    let badge = document.getElementById('global-notifications-badge');
+
+                    if (count <= 0) {
+                        badge?.remove();
+                        return;
+                    }
+
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.id = 'global-notifications-badge';
+                        badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-red-600 rounded-full';
+                        globalNotifToggle.appendChild(badge);
+                    }
+
+                    badge.textContent = count > 9 ? '9+' : count;
+                };
+
+                setInterval(() => {
+                    fetch('/notifications', { headers: { 'Accept': 'application/json' } })
+                        .then((response) => response.ok ? response.json() : null)
+                        .then((payload) => {
+                            if (!payload) return;
+                            const unread = Number(payload.unread_count || 0);
+                            updateBadge(unread);
+
+                            if (unread > knownUnread && notificationToast) {
+                                notificationToast.fire({
+                                    icon: 'info',
+                                    title: unread - knownUnread === 1 ? 'Novo aviso na sua conta' : `${unread - knownUnread} novos avisos na sua conta`,
+                                });
+                            }
+
+                            knownUnread = unread;
+                        })
+                        .catch(() => {});
+                }, 45000);
             }
 
             globalMarkAll?.addEventListener('click', function () {
@@ -408,6 +458,8 @@
                     .then(() => {
                         setGlobalNotificationsOpen(false);
                         globalBadge?.remove();
+                        const currentBadge = document.getElementById('global-notifications-badge');
+                        currentBadge?.remove();
                         document.querySelectorAll('.global-notification-unread').forEach(el => {
                             el.className = 'global-notification-read p-3 rounded-md bg-slate-50 border border-slate-200 text-slate-500 dark:bg-transparent dark:border-white/5 dark:text-slate-400';
                         });

@@ -23,6 +23,10 @@ class EmprestimoController extends Controller
 
     public function comprovante($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $membro = auth()->guard('membro')->user();
 
         // Garante que o membro só acessa o próprio comprovante
@@ -31,6 +35,12 @@ class EmprestimoController extends Controller
             ->where('membro_id', $membro->id)
             ->firstOrFail();
 
+        if (!$emprestimo->data_emprestimo || !$emprestimo->data_devolucao_prevista) {
+            return redirect()
+                ->route('emprestimos.historico')
+                ->with('erro', 'O comprovante fica disponível depois que a biblioteca confirmar a retirada.');
+        }
+
         $pdf = Pdf::loadView('membros.comprovante-pdf', compact('emprestimo'))
             ->setPaper('a4', 'portrait');
 
@@ -38,6 +48,10 @@ class EmprestimoController extends Controller
     }
     public function alugar($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         // 1. Acha o livro no banco
         $livro = Livros::findOrFail($id);
 
@@ -46,7 +60,7 @@ class EmprestimoController extends Controller
             return redirect()->route('login')->with('erro', 'Você precisa estar logado como membro para alugar livros.');
         }
 
-        // 3. Pega o membro autenticado (auth()->user() aqui retorna um Membros, não um User)
+        // 3. Pega o membro autenticado pelo guard de membros.
         $membro = auth()->guard('membro')->user();
 
         // 3.1. Checa se já existe empréstimo ativo deste livro para o membro
@@ -124,6 +138,10 @@ class EmprestimoController extends Controller
 
     public function reservar($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $livro = Livros::findOrFail($id);
 
         if (!auth()->guard('membro')->check()) {
@@ -195,6 +213,10 @@ class EmprestimoController extends Controller
 
     public function cancelarReserva($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $membro = auth()->guard('membro')->user();
 
         $reserva = Reserva::ativas()
@@ -220,6 +242,10 @@ class EmprestimoController extends Controller
 
     public function historico()
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $membro = auth()->guard('membro')->user();
 
         $emprestimos = Emprestimos::with('livro.autor')
@@ -248,6 +274,10 @@ class EmprestimoController extends Controller
 
     public function solicitarDevolucao($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $membro = auth()->guard('membro')->user();
 
         $emprestimo = Emprestimos::where('id', $id)
@@ -275,6 +305,10 @@ class EmprestimoController extends Controller
 
     public function renovar($id)
     {
+        if ($response = $this->bloquearAcessoAdministrativo()) {
+            return $response;
+        }
+
         $membro = auth()->guard('membro')->user();
 
         $emprestimo = Emprestimos::with('livro')
@@ -310,5 +344,16 @@ class EmprestimoController extends Controller
         ]);
 
         return redirect()->back()->with('sucesso', "Empréstimo renovado por mais {$prazoDias} dias.");
+    }
+
+    private function bloquearAcessoAdministrativo()
+    {
+        if (Auth::guard('web')->check()) {
+            return redirect()
+                ->route('dashboard')
+                ->with('erro', 'Contas administrativas não podem solicitar, reservar ou gerenciar empréstimos como membro.');
+        }
+
+        return null;
     }
 }

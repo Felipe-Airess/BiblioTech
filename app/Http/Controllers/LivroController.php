@@ -80,7 +80,7 @@ class LivroController extends Controller{
             'favoritos' => 0,
         ];
 
-        if (auth()->guard('membro')->check()) {
+        if (! auth()->guard('web')->check() && auth()->guard('membro')->check()) {
             $membroId = auth()->guard('membro')->id();
 
             $emprestimosDoMembro = Emprestimos::with('livro.autor')
@@ -231,7 +231,7 @@ class LivroController extends Controller{
      */
     public function recomendarParaUsuario()
     {
-        $membro = auth()->guard('membro')->user();
+        $membro = auth()->guard('web')->check() ? null : auth()->guard('membro')->user();
 
         if (! $membro) {
             return collect();
@@ -457,8 +457,9 @@ class LivroController extends Controller{
         $comentarios = $livro->comentarios->sortByDesc('created_at');
         $mediaNota = $livro->comentarios->avg('nota');
         $totalComentarios = $livro->comentarios->count();
-        $userId = auth()->id();
-        $membroId = auth()->guard('membro')->id();
+        $userId = auth()->guard('web')->id();
+        $membroId = auth()->guard('web')->check() ? null : auth()->guard('membro')->id();
+        $isMembroOperacional = auth()->guard('membro')->check() && !auth()->guard('web')->check();
         $comentarioExistente = $livro->comentarioDe($userId, $membroId);
         $prazoEmprestimoDias = Emprestimos::prazoDiasParaLivro($livro);
         $bloqueiosEmprestimo = [];
@@ -472,7 +473,7 @@ class LivroController extends Controller{
 
         // Apenas permitir comentário se o membro já tiver devolvido este livro
         $podeComentar = false;
-        if (auth()->guard('membro')->check()) {
+        if ($isMembroOperacional) {
             $podeComentar = Emprestimos::where('livro_id', $livro->id)
                 ->where('membro_id', $membroId)
                 ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
@@ -481,10 +482,15 @@ class LivroController extends Controller{
             $emprestimoAtivoMesmoLivro = Emprestimos::where('membro_id', $membroId)
                 ->where('livro_id', $livro->id)
                 ->whereIn('status', Emprestimos::STATUS_ATIVOS)
-                ->exists();
+                ->latest()
+                ->first();
 
             if ($emprestimoAtivoMesmoLivro) {
-                $bloqueiosEmprestimo[] = 'Você já tem uma solicitação ou empréstimo ativo deste livro.';
+                $bloqueiosEmprestimo[] = match ($emprestimoAtivoMesmoLivro->status) {
+                    Emprestimos::STATUS_SOLICITADO => 'Sua solicitação para este livro está em análise.',
+                    Emprestimos::STATUS_APROVADO => 'Este livro já foi aprovado para retirada.',
+                    default => 'Você já tem um empréstimo ativo deste livro.',
+                };
             }
 
             $totalAtivos = Emprestimos::where('membro_id', $membroId)
@@ -521,11 +527,11 @@ class LivroController extends Controller{
             }
         }
 
-        $podeSolicitarEmprestimo = auth()->guard('membro')->check()
+        $podeSolicitarEmprestimo = $isMembroOperacional
             && $livro->quantidade > 0
             && empty($bloqueiosEmprestimo);
 
-        $podeReservar = auth()->guard('membro')->check()
+        $podeReservar = $isMembroOperacional
             && $livro->quantidade <= 0
             && empty($bloqueiosEmprestimo)
             && !$reservaDoMembro;
@@ -544,7 +550,8 @@ class LivroController extends Controller{
             'reservasAtivas',
             'reservaDoMembro',
             'posicaoReserva',
-            'isFavorito'
+            'isFavorito',
+            'isMembroOperacional'
         ));
     }
 
@@ -556,8 +563,8 @@ class LivroController extends Controller{
         ]);
 
         $livro = Livros::findOrFail($id);
-        $userId = auth()->id();
-        $membroId = auth()->guard('membro')->id();
+        $userId = auth()->guard('web')->id();
+        $membroId = auth()->guard('web')->check() ? null : auth()->guard('membro')->id();
         $comentarioExistente = $livro->comentarioDe($userId, $membroId);
 
         if ($comentarioExistente) {
@@ -566,12 +573,12 @@ class LivroController extends Controller{
 
         // Verifica se o usuário/membro já devolveu este livro antes de permitir comentar
         $podeComentar = false;
-        if (auth()->guard('membro')->check()) {
+        if (! auth()->guard('web')->check() && auth()->guard('membro')->check()) {
             $podeComentar = Emprestimos::where('livro_id', $livro->id)
                 ->where('membro_id', $membroId)
                 ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
                 ->exists();
-        } elseif (auth()->check()) {
+        } elseif (auth()->guard('web')->check()) {
             $podeComentar = Emprestimos::where('livro_id', $livro->id)
                 ->where('user_id', $userId)
                 ->whereIn('status', [Emprestimos::STATUS_DEVOLVIDO, Emprestimos::STATUS_ENCERRADO])
@@ -586,12 +593,12 @@ class LivroController extends Controller{
         $comentario->nota = $request->nota;
         $comentario->comentario = $request->comentario;
 
-        if (auth()->guard('membro')->check()) {
+        if (! auth()->guard('web')->check() && auth()->guard('membro')->check()) {
             $comentario->membro_id = auth()->guard('membro')->id();
-        } elseif (auth()->check()) {
-            $comentario->user_id = auth()->id();
+        } elseif (auth()->guard('web')->check()) {
+            $comentario->user_id = auth()->guard('web')->id();
         } else {
-            abort(403);
+            abort(403, 'Você precisa estar logado para comentar.');
         }
 
         $comentario->save();
@@ -607,14 +614,14 @@ class LivroController extends Controller{
         ]);
 
         $comentario = Comentario::where('livro_id', $livroId)->findOrFail($comentarioId);
-        $userId = auth()->id();
-        $membroId = auth()->guard('membro')->id();
+        $userId = auth()->guard('web')->id();
+        $membroId = auth()->guard('web')->check() ? null : auth()->guard('membro')->id();
 
         $isOwner = ($membroId && $comentario->membro_id === $membroId)
             || ($userId && $comentario->user_id === $userId);
 
         if (!$isOwner) {
-            abort(403);
+            abort(403, 'Você só pode editar comentários criados por você.');
         }
 
         $comentario->nota = $request->nota;
@@ -627,14 +634,14 @@ class LivroController extends Controller{
     public function destroyComentario($livroId, $comentarioId)
     {
         $comentario = Comentario::where('livro_id', $livroId)->findOrFail($comentarioId);
-        $userId = auth()->id();
-        $membroId = auth()->guard('membro')->id();
+        $userId = auth()->guard('web')->id();
+        $membroId = auth()->guard('web')->check() ? null : auth()->guard('membro')->id();
 
         $isOwner = ($membroId && $comentario->membro_id === $membroId)
             || ($userId && $comentario->user_id === $userId);
 
         if (!$isOwner) {
-            abort(403);
+            abort(403, 'Você só pode remover comentários criados por você.');
         }
 
         $comentario->delete();

@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <title>Administração - Biblioteca</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&family=Merriweather:wght@400;700;900&display=swap" rel="stylesheet">
         @vite(['resources/css/app.css', 'resources/js/app.js'])
@@ -28,7 +29,7 @@
                             </button>
                         @endif
                         <div class="text-sm dark:text-gray-300">
-                            Logado como: <strong>{{ Auth::user()->name }}</strong>
+                            Logado como: <strong>{{ Auth::guard('web')->user()?->name ?? 'Equipe' }}</strong>
                         </div>
                     </div>
                 </header>
@@ -111,7 +112,57 @@
             adminNotifBackdrop?.addEventListener('click', () => setAdminNotificationsOpen(false));
 
             if (adminBadge && typeof Swal !== 'undefined') {
-                Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3000,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({icon:'info',title:'Você tem notificações novas'});
+                const initialAdminCount = Number(adminBadge.textContent.replace('+', '')) || 1;
+                Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3500,timerProgressBar:true,background:'#0d1420',color:'#fff'}).fire({
+                    icon:'info',
+                    title: initialAdminCount === 1 ? '1 pendência administrativa nova' : `${adminBadge.textContent} pendências administrativas`
+                });
+            }
+
+            if (adminNotifToggle) {
+                let knownAdminUnread = Number(adminBadge?.textContent.replace('+', '')) || 0;
+                const adminNotificationToast = typeof Swal !== 'undefined'
+                    ? Swal.mixin({toast:true,position:'top-end',showConfirmButton:false,timer:3800,timerProgressBar:true,background:'#0d1420',color:'#fff'})
+                    : null;
+
+                const updateAdminBadge = (count) => {
+                    if (!adminNotifToggle) return;
+                    let badge = document.getElementById('admin-notifications-badge');
+
+                    if (count <= 0) {
+                        badge?.remove();
+                        return;
+                    }
+
+                    if (!badge) {
+                        badge = document.createElement('span');
+                        badge.id = 'admin-notifications-badge';
+                        badge.className = 'absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-red-600 rounded-full';
+                        adminNotifToggle.appendChild(badge);
+                    }
+
+                    badge.textContent = count > 9 ? '9+' : count;
+                };
+
+                setInterval(() => {
+                    fetch('/notifications', { headers: { 'Accept': 'application/json' } })
+                        .then((response) => response.ok ? response.json() : null)
+                        .then((payload) => {
+                            if (!payload) return;
+                            const unread = Number(payload.unread_count || 0);
+                            updateAdminBadge(unread);
+
+                            if (unread > knownAdminUnread && adminNotificationToast) {
+                                adminNotificationToast.fire({
+                                    icon: 'info',
+                                    title: unread - knownAdminUnread === 1 ? 'Nova pendência no painel' : `${unread - knownAdminUnread} novas pendências no painel`,
+                                });
+                            }
+
+                            knownAdminUnread = unread;
+                        })
+                        .catch(() => {});
+                }, 45000);
             }
 
             adminMarkAll?.addEventListener('click', function () {
@@ -121,6 +172,8 @@
                     .then(() => {
                         setAdminNotificationsOpen(false);
                         adminBadge?.remove();
+                        const currentAdminBadge = document.getElementById('admin-notifications-badge');
+                        currentAdminBadge?.remove();
                         document.querySelectorAll('.admin-notification-unread').forEach(el => {
                             el.className = 'admin-notification-read p-3 rounded-md bg-transparent border border-white/5 text-slate-400';
                         });

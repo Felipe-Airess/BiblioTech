@@ -14,9 +14,9 @@ class PerfilMembrosController extends Controller
     public function index()
     {
         // Apenas administradores (gerente e bibliotecário) podem acessar
-        $user = auth()->user();
+        $user = auth()->guard('web')->user();
         if (!$user || !in_array($user->tipo_usuario, ['gerente', 'bibliotecario'])) {
-            abort(403, 'Não autorizado');
+            abort(403, 'Você não tem permissão para consultar perfis de membros.');
         }
 
         $membros = Membros::with(['comentarios', 'emprestimos'])
@@ -75,9 +75,9 @@ class PerfilMembrosController extends Controller
     public function show(Membros $membro)
     {
         // Apenas administradores
-        $user = auth()->user();
+        $user = auth()->guard('web')->user();
         if (!$user || !in_array($user->tipo_usuario, ['gerente', 'bibliotecario'])) {
-            abort(403, 'Não autorizado');
+            abort(403, 'Você não tem permissão para consultar este membro.');
         }
 
         // Detalhes do membro
@@ -101,7 +101,7 @@ class PerfilMembrosController extends Controller
 
     public function sendMessage(Request $request, Membros $membro)
     {
-        $user = auth()->user();
+        $user = auth()->guard('web')->user();
         if (!$user || !in_array($user->tipo_usuario, ['gerente', 'bibliotecario'])) {
             return response()->json(['error' => 'Não autorizado'], 403);
         }
@@ -123,9 +123,9 @@ class PerfilMembrosController extends Controller
 
     public function resetPassword(Request $request, Membros $membro)
     {
-        $user = auth()->user();
+        $user = auth()->guard('web')->user();
         if (!$user || !in_array($user->tipo_usuario, ['gerente', 'bibliotecario'])) {
-            abort(403, 'Não autorizado');
+            abort(403, 'Você não tem permissão para redefinir senha de membros.');
         }
 
         $data = $request->validate([

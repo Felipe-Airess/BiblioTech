@@ -5,17 +5,16 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class VerificaTipo
 {
-    // Troque o string $tipo por ...$tipos
     public function handle(Request $request, Closure $next, ...$tipos)
     {
-        $user = $request->user();
+        $user = Auth::guard('web')->user();
 
-        // Agora verificamos se o tipo do usuário está DENTRO do array de tipos permitidos
         if (! $user || ! in_array($user->tipo_usuario, $tipos)) {
-            abort(403);
+            abort(403, 'Você não tem permissão para acessar esta área.');
         }
 
         return $next($request);

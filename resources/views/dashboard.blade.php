@@ -18,18 +18,18 @@
         $totalAutores       = $autores->count();
         $emprestimosAtivos  = \App\Models\Emprestimos::whereNull('data_devolucao_real')->count();
         $totalMembros       = \App\Models\Membros::count();
-        $dashboardUser = auth()->user();
+        $dashboardUser = auth()->guard('web')->user();
         $dashboardMember = auth()->guard('membro')->user();
-        $currentPessoa = $dashboardMember ?: $dashboardUser;
+        $currentPessoa = $dashboardUser ?: $dashboardMember;
         $nomeCompleto = $currentPessoa ? ($currentPessoa->name ?? $currentPessoa->nome ?? 'Visitante') : 'Visitante';
         $primeiroNome = explode(' ', $nomeCompleto)[0];
         $iniciais = collect(explode(' ', $nomeCompleto))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('');
         $hora     = now()->hour;
         $saudacao = $hora < 12 ? 'Bom dia' : ($hora < 18 ? 'Boa tarde' : 'Boa noite');
-        $isAdmin  = auth()->check() && in_array(auth()->user()->tipo_usuario, ['gerente','bibliotecario']);
-        $isMember = auth()->guard('membro')->check();
+        $isAdmin  = $dashboardUser && in_array($dashboardUser->tipo_usuario, ['gerente','bibliotecario'], true);
+        $isMember = ! $dashboardUser && auth()->guard('membro')->check();
         $categorias = $livros->pluck('categoria')->filter()->unique()->sort()->values();
-        $notifiableTop = auth()->guard('membro')->check() ? auth()->guard('membro')->user() : auth()->user();
+        $notifiableTop = $dashboardUser ?: $dashboardMember;
         $unreadCount = $notifiableTop ? $notifiableTop->unreadNotifications()->count() : 0;
         $hojeDashboard = now()->locale('pt_BR');
         $emprestimosHoje = \App\Models\Emprestimos::whereDate('data_emprestimo', today())->count();
@@ -89,7 +89,7 @@
                             <span id="notifications-badge" class="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-[10px] font-black text-white bg-red-600 rounded-full">{{ $unreadCount > 9 ? '9+' : $unreadCount }}</span>
                         @endif
                     </button>
-                    @if(auth()->guard('membro')->check())
+                    @if($isMember)
                         <button type="button" id="loans-toggle" class="h-9 w-9 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-white/10 transition flex items-center justify-center" aria-controls="loans-sidebar" aria-expanded="false" aria-label="Meus alugueis">
                             <i class="ph ph-ticket text-sm"></i>
                             <span class="sr-only">Meus alugueis</span>
@@ -404,7 +404,7 @@
                     </div>
                 @endif
 
-                @if(auth()->guard('membro')->check())
+                @if($isMember)
                     <section class="lg:col-span-3 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(320px,.85fr)]">
                         <div class="rounded-md border border-blue-200 bg-white p-5 dark:border-blue-500/20 dark:bg-[#0d1420]">
                             <div class="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -1033,7 +1033,7 @@
     </div>{{-- /max-w --}}
     </div>{{-- /content-area --}}
 
-    @if(auth()->guard('membro')->check())
+    @if($isMember)
     {{-- ══ SIDEBAR: MEUS ALUGUEIS ══ --}}
     <div id="loans-backdrop" class="fixed inset-0 bg-slate-950/40 opacity-0 pointer-events-none transition-opacity duration-200 z-50 dark:bg-slate-950/60" aria-hidden="true"></div>
     <aside id="loans-sidebar" class="fixed top-0 right-[-420px] w-[380px] max-w-[90vw] h-screen bg-white border-l border-slate-200 shadow-2xl transition-[right] duration-200 z-[60] flex flex-col dark:bg-[#0d1420] dark:border-white/10" role="dialog" aria-modal="true" aria-label="Meus alugueis">
@@ -1052,13 +1052,13 @@
                     @foreach($emprestimosDoMembro as $emp)
                         @php
                             $hoje = \Carbon\Carbon::today();
-                            $inicio = $emp->data_emprestimo;
-                            $fim = $emp->data_devolucao_prevista;
-                            $total = max(1, $inicio->diffInDays($fim));
-                            $passado = $inicio->diffInDays($hoje);
-                            $progress = min(100, round($passado / $total * 100));
-                            $diasRestantes = $hoje->diffInDays($fim, false);
-                            $atrasado = $diasRestantes < 0;
+                            $inicio = $emp->data_emprestimo?->copy()->startOfDay();
+                            $fim = $emp->data_devolucao_prevista?->copy()->startOfDay();
+                            $total = ($inicio && $fim) ? max(1, $inicio->diffInDays($fim)) : 1;
+                            $passado = $inicio ? max(0, $inicio->diffInDays($hoje, false)) : 0;
+                            $progress = $fim ? min(100, round($passado / $total * 100)) : 0;
+                            $diasRestantes = $fim ? $hoje->diffInDays($fim, false) : null;
+                            $atrasado = $diasRestantes !== null && $diasRestantes < 0;
                             $progressClass = $atrasado ? 'bg-red-500' : ($progress > 75 ? 'bg-amber-500' : 'bg-blue-500');
                         @endphp
                         <div class="flex gap-3 rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">
@@ -1073,10 +1073,20 @@
                                 <div class="flex items-center justify-between gap-2">
                                     <p class="text-sm font-semibold text-slate-950 truncate dark:text-white">{{ $emp->livro?->titulo ?? '—' }}</p>
                                     <span class="text-[10px] font-bold uppercase tracking-widest {{ $atrasado ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400' }}">
-                                        {{ $atrasado ? 'Vencido' : 'Ativo' }}
+                                        @if(! $fim)
+                                            Pendente
+                                        @else
+                                            {{ $atrasado ? 'Vencido' : 'Ativo' }}
+                                        @endif
                                     </span>
                                 </div>
-                                <p class="text-[11px] text-slate-500 dark:text-gray-400">Expira em {{ $fim->format('d/m') }}</p>
+                                <p class="text-[11px] text-slate-500 dark:text-gray-400">
+                                    @if($fim)
+                                        Expira em {{ $fim->format('d/m') }}
+                                    @else
+                                        Aguardando retirada
+                                    @endif
+                                </p>
                                 <div class="mt-2 h-1.5 rounded-full bg-slate-200 overflow-hidden dark:bg-white/10">
                                     <div class="progress-fill {{ $progressClass }} h-full" data-progress="{{ $progress }}"></div>
                                 </div>
@@ -1098,10 +1108,10 @@
     </aside>
     @endif
 
-    @auth
+    @if($notifiableTop)
     {{-- ══ SIDEBAR: NOTIFICAÇÕES (baseado em Meus alugueis) ══ --}}
     @php
-        $notifiable = auth()->guard('membro')->check() ? auth()->guard('membro')->user() : auth()->user();
+        $notifiable = auth()->guard('web')->user() ?: auth()->guard('membro')->user();
         $unreads = $notifiable ? $notifiable->unreadNotifications()->latest()->get() : collect();
         $reads = $notifiable ? $notifiable->readNotifications()->latest()->take(30)->get() : collect();
     @endphp
@@ -1148,7 +1158,7 @@
             </button>
         </div>
     </aside>
-    @endauth
+    @endif
 
     {{-- ══ SCRIPTS ══ --}}
     <script src="https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"></script>
@@ -1222,17 +1232,5 @@
         });
     </script>
     @endif
-
-
-    {{-- ══════════════════════════════════════════════════════
-         MODAL: "VER TUDO" — com List.js e filtros avançados
-         ══════════════════════════════════════════════════════ --}}
-    <x-modal-todos-livros :categorias="$categorias" :autores="$autores" :livros="$livros" />
-
-
-    {{-- ══════════════════════════════════════════════════════
-         MODAL: "VER TUDO" — com List.js e filtros avançados
-         ══════════════════════════════════════════════════════ --}}
-    <x-modal-todos-livros :categorias="$categorias" :autores="$autores" :livros="$livros" />
 
 </x-app-layout>

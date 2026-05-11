@@ -95,7 +95,7 @@ class EmprestimoAdminController extends Controller
 
         $emprestimo->update([
             'status' => Emprestimos::STATUS_APROVADO,
-            'approved_by' => auth()->id(),
+            'approved_by' => auth()->guard('web')->id(),
             'approved_at' => Carbon::now(),
         ]);
 
@@ -189,7 +189,7 @@ class EmprestimoAdminController extends Controller
 
         $emprestimo->update([
             'multa_paga_em' => now(),
-            'multa_regularizada_por' => auth()->id(),
+            'multa_regularizada_por' => auth()->guard('web')->id(),
         ]);
         AuditLog::record('multa_regularizada', 'Regularizou multa de empréstimo.', $emprestimo, [
             'membro' => $emprestimo->membro?->nome,
@@ -245,7 +245,7 @@ class EmprestimoAdminController extends Controller
             'data_devolucao_prevista' => null,
             'data_devolucao_real' => null,
             'valor_multa' => 0,
-            'approved_by' => auth()->id(),
+            'approved_by' => auth()->guard('web')->id(),
             'approved_at' => now(),
         ]);
 
@@ -279,7 +279,7 @@ class EmprestimoAdminController extends Controller
             'status' => Emprestimos::STATUS_REJEITADO,
             'rejected_reason' => $request->input('motivo'),
             'rejected_at' => Carbon::now(),
-            'rejected_by' => auth()->id(),
+            'rejected_by' => auth()->guard('web')->id(),
         ]);
 
         if ($emprestimo->membro) {

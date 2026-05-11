@@ -21,7 +21,7 @@
     </x-slot>
 
     <div class="-mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 min-h-screen bg-slate-100 dark:bg-[#0f172a]">
-        <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-5">
+        <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] gap-5">
             <section class="bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1e293b] rounded-lg p-5 h-fit">
                 <h2 class="text-sm font-black text-slate-900 dark:text-white uppercase tracking-wider">Nova categoria</h2>
                 <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">Categorias cadastradas aparecem no formulário de livros.</p>
@@ -58,25 +58,25 @@
             <section class="bg-white dark:bg-[#111827] border border-slate-200 dark:border-[#1e293b] rounded-lg overflow-hidden">
                 <div class="px-5 py-4 border-b border-slate-200 dark:border-[#1e293b]">
                     <p class="text-[11px] uppercase tracking-[.16em] text-slate-500 dark:text-slate-400 font-black">Categorias cadastradas</p>
-                    <p class="text-sm text-slate-600 dark:text-slate-300">{{ $categorias->count() }} categoria{{ $categorias->count() === 1 ? '' : 's' }}</p>
+                    <p class="text-sm text-slate-600 dark:text-slate-300">{{ $categorias->total() }} categoria{{ $categorias->total() === 1 ? '' : 's' }}</p>
                 </div>
                 <div class="overflow-x-auto">
-                    <table class="min-w-[680px] w-full text-sm">
+                    <table class="min-w-[560px] w-full text-sm">
                         <thead class="bg-slate-100 dark:bg-slate-950/60 text-slate-500 dark:text-slate-400 text-[11px] uppercase tracking-wider">
                             <tr>
-                                <th class="text-left px-5 py-3">Categoria</th>
-                                <th class="text-left px-5 py-3">Descrição</th>
-                                <th class="text-left px-5 py-3">Livros</th>
-                                <th class="text-right px-5 py-3">Ações</th>
+                                <th class="text-left px-4 py-3">Categoria</th>
+                                <th class="text-left px-4 py-3">Descrição</th>
+                                <th class="text-left px-4 py-3">Livros</th>
+                                <th class="text-right px-4 py-3">Ações</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
                             @forelse($categorias as $categoria)
                                 <tr>
-                                    <td class="px-5 py-4 font-bold text-slate-900 dark:text-white">{{ $categoria->nome }}</td>
-                                    <td class="px-5 py-4 text-slate-600 dark:text-slate-300">{{ $categoria->descricao ?: 'Sem descrição' }}</td>
-                                    <td class="px-5 py-4 text-amber-700 dark:text-amber-300 font-black">{{ $categoria->livros_count }}</td>
-                                    <td class="px-5 py-4 text-right">
+                                    <td class="px-4 py-3 font-bold text-slate-900 dark:text-white">{{ $categoria->nome }}</td>
+                                    <td class="max-w-[220px] truncate px-4 py-3 text-slate-600 dark:text-slate-300">{{ $categoria->descricao ?: 'Sem descrição' }}</td>
+                                    <td class="px-4 py-3 text-amber-700 dark:text-amber-300 font-black">{{ $categoria->livros_count }}</td>
+                                    <td class="px-4 py-3 text-right">
                                         <a href="{{ route('categorias.edit', $categoria) }}" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-300 hover:bg-amber-500/20 text-[11px] font-bold uppercase tracking-widest transition">
                                             <i class="ph ph-pencil-simple"></i>
                                             Editar
@@ -91,6 +91,11 @@
                         </tbody>
                     </table>
                 </div>
+                @if($categorias->hasPages())
+                    <div class="border-t border-slate-200 px-4 py-3 dark:border-[#1e293b]">
+                        {{ $categorias->onEachSide(1)->links() }}
+                    </div>
+                @endif
             </section>
         </div>
     </div>

@@ -19,7 +19,7 @@
                     <i class="ph text-sm" :class="dark ? 'ph-sun' : 'ph-moon'"></i>
                 </button>
                 <div class="w-9 h-9 rounded-full bg-gradient-to-br from-[#1E3A8A] to-blue-700 flex items-center justify-center ring-1 ring-blue-500/30 shrink-0">
-                    <span class="text-white text-[10px] font-black tracking-tight select-none">{{ auth()->user()->nome ? collect(explode(' ', auth()->user()->nome))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('') : 'AD' }}</span>
+                    <span class="text-white text-[10px] font-black tracking-tight select-none">{{ auth()->guard('web')->user()?->name ? collect(explode(' ', auth()->guard('web')->user()->name))->map(fn($p) => strtoupper(mb_substr($p,0,1)))->take(2)->join('') : 'AD' }}</span>
                 </div>
             </div>
         </div>

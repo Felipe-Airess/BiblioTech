@@ -8,10 +8,6 @@
         </p>
     </header>
 
-    <form id="send-verification" method="post" action="{{ route('verification.send') }}">
-        @csrf
-    </form>
-
     <form method="post" action="{{ route('profile.update') }}" class="mt-6 space-y-6">
         @csrf
         @method('patch')
@@ -26,24 +22,6 @@
             <x-input-label for="email" :value="'E-mail'" />
             <x-text-input id="email" name="email" type="email" class="mt-2 block w-full bg-slate-50 text-slate-900 placeholder:text-slate-400 dark:bg-[#0b1120] dark:text-white" :value="old('email', $user->email)" required autocomplete="username" />
             <x-input-error class="mt-2" :messages="$errors->get('email')" />
-
-            @if ($user instanceof \Illuminate\Contracts\Auth\MustVerifyEmail && ! $user->hasVerifiedEmail())
-                <div>
-                    <p class="text-sm mt-2 text-slate-700 dark:text-slate-200">
-                        Seu endereço de e-mail não foi verificado.
-
-                        <button form="send-verification" class="underline text-sm text-blue-700 dark:text-blue-300 hover:text-blue-900 dark:hover:text-blue-200 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 dark:focus:ring-offset-gray-800">
-                            Clique aqui para reenviar o e-mail de verificação.
-                        </button>
-                    </p>
-
-                    @if (session('status') === 'verification-link-sent')
-                        <p class="mt-2 font-medium text-sm text-green-600 dark:text-green-400">
-                            Um novo link de verificação foi enviado para seu endereço de e-mail.
-                        </p>
-                    @endif
-                </div>
-            @endif
         </div>
 
         <div class="flex items-center gap-4">

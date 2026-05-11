@@ -16,8 +16,10 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): View
     {
+        $user = Auth::guard('web')->user() ?: Auth::guard('membro')->user();
+
         return view('profile.edit', [
-            'user' => $request->user(),
+            'user' => $user,
         ]);
     }
 
@@ -26,7 +28,7 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
-        $user = $request->user();
+        $user = Auth::guard('web')->user() ?: Auth::guard('membro')->user();
         $data = $request->validated();
 
         // Se for membro, mapeamos name -> nome explicitamente para evitar
@@ -56,9 +58,9 @@ class ProfileController extends Controller
             'password' => ['required', 'current_password'],
         ]);
 
-        $user = $request->user();
+        $user = Auth::guard('web')->user() ?: Auth::guard('membro')->user();
 
-        Auth::logout();
+        Auth::guard($user instanceof \App\Models\Membros ? 'membro' : 'web')->logout();
 
         $user->delete();
 

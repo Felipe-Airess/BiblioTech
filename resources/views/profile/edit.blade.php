@@ -1,7 +1,7 @@
 <x-app-layout>
     @php
-        $authUser = auth()->guard('membro')->user() ?: auth()->guard('web')->user() ?: $user;
-        $isMembro = auth()->guard('membro')->check() || $authUser instanceof \App\Models\Membros;
+        $authUser = auth()->guard('web')->user() ?: auth()->guard('membro')->user() ?: $user;
+        $isMembro = !auth()->guard('web')->check() && (auth()->guard('membro')->check() || $authUser instanceof \App\Models\Membros);
         $nomePerfil = $authUser->name ?? $authUser->nome ?? 'Usuário';
         $emailPerfil = $authUser->email ?? 'sem-email@bibliotech.local';
         $iniciaisPerfil = collect(explode(' ', trim($nomePerfil)))

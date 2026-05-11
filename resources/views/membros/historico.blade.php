@@ -269,10 +269,10 @@
                         $diasRestantes = $emp->data_devolucao_prevista ? today()->diffInDays($emp->data_devolucao_prevista, false) : null;
                     @endphp
 
-                    <article class="history-card rounded-md border bg-white/95 p-5 shadow-sm transition dark:bg-[#0d1420]/95 {{ $atrasado ? 'border-red-300 dark:border-red-500/30' : 'border-slate-200 dark:border-white/10' }}" data-history-type="{{ $type }}" data-history-search="{{ Str::lower(($emp->livro?->titulo ?? '') . ' ' . ($emp->livro?->autor?->nome ?? '') . ' ' . $statusLabel) }}">
-                        <div class="grid gap-5 lg:grid-cols-[minmax(0,1fr)_260px]">
+                    <article class="history-card rounded-md border bg-white/95 shadow-sm transition dark:bg-[#0d1420]/95 {{ $atrasado ? 'border-red-300 dark:border-red-500/30' : 'border-slate-200 dark:border-white/10' }}" data-history-type="{{ $type }}" data-history-search="{{ Str::lower(($emp->livro?->titulo ?? '') . ' ' . ($emp->livro?->autor?->nome ?? '') . ' ' . $statusLabel) }}">
+                        <div class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_220px] lg:items-center">
                             <div class="flex min-w-0 gap-4">
-                                <div class="h-24 w-16 shrink-0 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200 dark:bg-white/10 dark:ring-white/10">
+                                <div class="h-20 w-14 shrink-0 overflow-hidden rounded-md bg-slate-100 ring-1 ring-slate-200 dark:bg-white/10 dark:ring-white/10">
                                     @if($emp->livro?->capa)
                                         <img src="{{ asset('storage/' . $emp->livro->capa) }}" alt="{{ $emp->livro?->titulo }}" class="h-full w-full object-cover">
                                     @else
@@ -295,22 +295,13 @@
                                         @endif
                                     </div>
 
-                                    <h3 class="mt-3 text-lg font-black leading-tight text-slate-950 dark:text-white">{{ $emp->livro?->titulo ?? 'Livro removido' }}</h3>
+                                    <h3 class="mt-2 text-base font-black leading-tight text-slate-950 dark:text-white">{{ $emp->livro?->titulo ?? 'Livro removido' }}</h3>
                                     <p class="mt-1 text-sm text-slate-500 dark:text-slate-400">{{ $emp->livro?->autor?->nome ?? 'Autor não informado' }}</p>
 
-                                    <div class="mt-4 grid grid-cols-1 gap-2 text-xs text-slate-500 dark:text-slate-400 sm:grid-cols-3">
-                                        <div class="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">
-                                            <p class="text-[9px] font-black uppercase tracking-widest">Retirada</p>
-                                            <p class="mt-1 font-bold text-slate-900 dark:text-white">{{ $emp->data_emprestimo ? $emp->data_emprestimo->format('d/m/Y') : '--' }}</p>
-                                        </div>
-                                        <div class="rounded-md border {{ $atrasado ? 'border-red-200 bg-red-50 dark:border-red-500/30 dark:bg-red-500/10' : 'border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/[.03]' }} p-3">
-                                            <p class="text-[9px] font-black uppercase tracking-widest">Prazo</p>
-                                            <p class="mt-1 font-bold {{ $atrasado ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-white' }}">{{ $emp->data_devolucao_prevista ? $emp->data_devolucao_prevista->format('d/m/Y') : '--' }}</p>
-                                        </div>
-                                        <div class="rounded-md border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/[.03]">
-                                            <p class="text-[9px] font-black uppercase tracking-widest">Devolução</p>
-                                            <p class="mt-1 font-bold text-slate-900 dark:text-white">{{ $emp->data_devolucao_real ? $emp->data_devolucao_real->format('d/m/Y') : 'Pendente' }}</p>
-                                        </div>
+                                    <div class="mt-3 grid gap-2 text-xs text-slate-600 dark:text-slate-400 sm:grid-cols-3">
+                                        <p><span class="font-black uppercase tracking-wider text-slate-500">Retirada:</span> <strong class="text-slate-900 dark:text-white">{{ $emp->data_emprestimo ? $emp->data_emprestimo->format('d/m/Y') : '--' }}</strong></p>
+                                        <p><span class="font-black uppercase tracking-wider text-slate-500">Prazo:</span> <strong class="{{ $atrasado ? 'text-red-700 dark:text-red-300' : 'text-slate-900 dark:text-white' }}">{{ $emp->data_devolucao_prevista ? $emp->data_devolucao_prevista->format('d/m/Y') : '--' }}</strong></p>
+                                        <p><span class="font-black uppercase tracking-wider text-slate-500">Devolução:</span> <strong class="text-slate-900 dark:text-white">{{ $emp->data_devolucao_real ? $emp->data_devolucao_real->format('d/m/Y') : 'Pendente' }}</strong></p>
                                     </div>
 
                                     @if($diasRestantes !== null && ! $concluido)
@@ -337,11 +328,18 @@
                                 </div>
                             </div>
 
-                            <div class="flex flex-col gap-2 lg:items-stretch">
-                                <a href="{{ route('emprestimos.comprovante', $emp->id) }}" target="_blank" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
-                                    <i class="ph ph-file-pdf"></i>
-                                    Comprovante
-                                </a>
+                            <div class="flex flex-wrap gap-2 lg:flex-col lg:items-stretch">
+                                @if($emp->data_emprestimo && $emp->data_devolucao_prevista)
+                                    <a href="{{ route('emprestimos.comprovante', $emp->id) }}" target="_blank" class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:bg-slate-100 dark:border-white/10 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10">
+                                        <i class="ph ph-file-pdf"></i>
+                                        Comprovante
+                                    </a>
+                                @else
+                                    <span class="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-100 px-3 text-[10px] font-black uppercase tracking-widest text-slate-400 dark:border-white/10 dark:bg-white/5 dark:text-slate-500">
+                                        <i class="ph ph-clock"></i>
+                                        Aguardando retirada
+                                    </span>
+                                @endif
 
                                 @if(in_array($status, [\App\Models\Emprestimos::STATUS_RETIRADO, \App\Models\Emprestimos::STATUS_EM_USO], true))
                                     @if($emp->podeRenovar())

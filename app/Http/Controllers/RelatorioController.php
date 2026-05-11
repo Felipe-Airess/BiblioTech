@@ -22,7 +22,7 @@ class RelatorioController extends Controller
     public function exportarPdf(Request $request)
     {
         $dados = $this->dadosRelatorio($request);
-        $nomeArquivo = 'relatorio-bibliotech-' . $dados['inicio']->format('Y-m-d') . '-' . $dados['fim']->format('Y-m-d') . '.pdf';
+        $nomeArquivo = 'relatorio-bibliotech-' . $dados['tipoRelatorio'] . '-' . $dados['inicio']->format('Y-m-d') . '-' . $dados['fim']->format('Y-m-d') . '.pdf';
 
         return Pdf::loadView('admin.relatorios.pdf', $dados)
             ->setPaper('a4', 'landscape')
@@ -42,6 +42,11 @@ class RelatorioController extends Controller
         if ($inicio->greaterThan($fim)) {
             [$inicio, $fim] = [$fim->copy()->startOfDay(), $inicio->copy()->endOfDay()];
         }
+
+        $tiposPermitidos = ['visao_geral', 'acervo', 'circulacao', 'membros', 'financeiro', 'operacao'];
+        $tipoRelatorio = in_array($request->input('tipo'), $tiposPermitidos, true)
+            ? $request->input('tipo')
+            : 'visao_geral';
 
         $emprestimosPeriodo = Emprestimos::with(['livro.autor', 'membro', 'aprovadoPor'])
             ->whereBetween('data_emprestimo', [$inicio->toDateString(), $fim->toDateString()])
@@ -316,6 +321,7 @@ class RelatorioController extends Controller
         return compact(
             'inicio',
             'fim',
+            'tipoRelatorio',
             'metricas',
             'acervo',
             'emprestimosAtivos',

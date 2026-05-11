@@ -11,8 +11,9 @@ class CategoriaController extends Controller
 {
     public function index()
     {
-        $categorias = Categoria::orderBy('nome')->get()
-            ->map(function (Categoria $categoria) {
+        $categorias = Categoria::orderBy('nome')
+            ->paginate(8)
+            ->through(function (Categoria $categoria) {
                 $categoria->livros_count = Livros::where('categoria', $categoria->nome)->count();
                 return $categoria;
             });

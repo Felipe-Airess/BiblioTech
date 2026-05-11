@@ -94,7 +94,7 @@
                             @endif
                         </p>
 
-                        @if(auth()->guard('membro')->check())
+                        @if($isMembroOperacional)
                             <form action="{{ route('livros.favorito.toggle', $livro) }}" method="POST" class="mt-5" data-confirm="favorite" data-title="{{ $isFavorito ? 'Remover dos favoritos?' : 'Adicionar aos favoritos?' }}" data-text="{{ $isFavorito ? 'Este livro sairá da sua lista Quero ler.' : 'Este livro ficará salvo na sua lista Quero ler.' }}">
                                 @csrf
                                 <button type="submit" class="inline-flex h-11 items-center gap-2 rounded-md border px-4 text-[11px] font-black uppercase tracking-widest transition {{ $isFavorito ? 'border-red-200 bg-red-50 text-red-700 hover:bg-red-100 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300 dark:hover:bg-red-500/20' : 'border-amber-300 bg-amber-50 text-amber-800 hover:bg-amber-100 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300 dark:hover:bg-amber-500/20' }}">
@@ -165,13 +165,13 @@
                                     </div>
                                 </div>
 
-                                @if(auth()->guard('membro')->check() && !empty($bloqueiosEmprestimo))
-                                    <div class="mt-4 rounded-md border border-red-200 bg-red-50 p-3 dark:border-red-500/30 dark:bg-red-500/10">
-                                        <p class="text-[10px] font-black uppercase tracking-widest text-red-700 dark:text-red-300">Bloqueado</p>
+                                @if($isMembroOperacional && !empty($bloqueiosEmprestimo))
+                                    <div class="mt-4 rounded-md border border-amber-200 bg-amber-50 p-3 dark:border-amber-500/30 dark:bg-amber-500/10">
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-amber-800 dark:text-amber-300">Situação do pedido</p>
                                         <ul class="mt-2 space-y-1">
                                             @foreach($bloqueiosEmprestimo as $bloqueio)
-                                                <li class="flex gap-2 text-xs text-red-700 dark:text-red-200">
-                                                    <i class="ph ph-warning-circle mt-0.5 shrink-0"></i>
+                                                <li class="flex gap-2 text-xs text-amber-900 dark:text-amber-100">
+                                                    <i class="ph ph-info mt-0.5 shrink-0"></i>
                                                     <span>{{ $bloqueio }}</span>
                                                 </li>
                                             @endforeach
@@ -194,7 +194,7 @@
                                 @endif
 
                                 <div class="mt-5 space-y-3">
-                                    @if(auth()->guard('membro')->check())
+                                    @if($isMembroOperacional)
                                         @if($livro->quantidade > 0)
                                             @if($podeSolicitarEmprestimo)
                                                 <form action="{{ route('livros.alugar', $livro->id) }}" method="POST" data-confirm="loan" data-title="Solicitar empréstimo?" data-text="O prazo previsto para este livro é de {{ $prazoEmprestimoDias }} dias.">
@@ -267,7 +267,7 @@
                     </div>
                 </div>
 
-                @if(auth()->guard('membro')->check() || auth()->check())
+                @if($isMembroOperacional || auth()->guard('web')->check())
                     @if($comentarioExistente)
                         <div class="mb-6 rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                             Você já comentou este livro. Edite seu comentário na lista abaixo.
@@ -325,8 +325,8 @@
                             <p class="text-sm leading-relaxed text-slate-600 dark:text-slate-400">{{ $comentario->comentario }}</p>
 
                             @php
-                                $isOwner = (auth()->guard('membro')->check() && auth()->guard('membro')->id() === $comentario->membro_id)
-                                    || (auth()->check() && auth()->id() === $comentario->user_id);
+                                $isOwner = ($isMembroOperacional && auth()->guard('membro')->id() === $comentario->membro_id)
+                                    || (auth()->guard('web')->check() && auth()->guard('web')->id() === $comentario->user_id);
                             @endphp
                             @if($isOwner)
                                 <details class="mt-4">

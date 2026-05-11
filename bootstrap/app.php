@@ -15,6 +15,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // AQUI ESTÁ A MÁGICA: Registrando o apelido do nosso middleware
         $middleware->alias([
             'tipo' => \App\Http\Middleware\VerificaTipo::class,
+            'membro' => \App\Http\Middleware\SomenteMembro::class,
         ]);
 
     })

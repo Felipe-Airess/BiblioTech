@@ -89,8 +89,8 @@
     <div class="section-title">Datas do Empréstimo</div>
     <div class="grid">
         <div class="row">
-            <div class="cell"><span class="label">Data de Retirada</span><br><span class="value">{{ $emprestimo->data_emprestimo->format('d/m/Y') }}</span></div>
-            <div class="cell"><span class="label">Prazo de Devolução</span><br><span class="value">{{ $emprestimo->data_devolucao_prevista->format('d/m/Y') }}</span></div>
+            <div class="cell"><span class="label">Data de Retirada</span><br><span class="value">{{ $emprestimo->data_emprestimo?->format('d/m/Y') ?? 'Aguardando retirada' }}</span></div>
+            <div class="cell"><span class="label">Prazo de Devolução</span><br><span class="value">{{ $emprestimo->data_devolucao_prevista?->format('d/m/Y') ?? 'A definir' }}</span></div>
         </div>
         @if($emprestimo->data_devolucao_real)
         <div class="row">
@@ -110,7 +110,7 @@
         </div>
     @elseif($ativo)
         <div class="alert alert-blue">
-            <strong>Empréstimo ativo.</strong> Devolva até {{ $emprestimo->data_devolucao_prevista->format('d/m/Y') }} para evitar multas.
+            <strong>Empréstimo ativo.</strong> Devolva até {{ $emprestimo->data_devolucao_prevista?->format('d/m/Y') ?? 'a data definida pela biblioteca' }} para evitar multas.
         </div>
     @else
         <div class="alert alert-green">
